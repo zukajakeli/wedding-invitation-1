@@ -245,16 +245,16 @@ export function MainApp({ name, lang }: { name: string; lang: Language }) {
               {t.hero.invite}
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-8 text-stone-600 font-serif text-base md:text-lg tracking-[0.12em] uppercase">
-              <div className="flex items-center gap-2">
-                <CalendarDays size={18} />
-                <span className="font-cursive text-2xl md:text-3xl tracking-normal normal-case text-stone-700">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-8 text-stone-600 font-serif text-base md:text-lg tracking-[0.12em] uppercase">
+              <div className="flex items-center justify-center gap-2">
+                <CalendarDays size={18} className="shrink-0" />
+                <span className="font-cursive text-2xl md:text-3xl tracking-normal normal-case text-stone-700 leading-none">
                   19.04.2026
                 </span>
               </div>
-              <div className="flex items-center gap-2">
-                <MapPin size={18} />
-                <span className="font-serif italic text-2xl md:text-3xl tracking-normal normal-case text-stone-700">
+              <div className="flex items-center justify-center gap-2">
+                <MapPin size={18} className="shrink-0" />
+                <span className="font-serif italic text-2xl md:text-3xl tracking-normal normal-case text-stone-700 leading-none">
                   {t.hero.country}
                 </span>
               </div>

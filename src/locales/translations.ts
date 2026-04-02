@@ -69,7 +69,7 @@ export const translations = {
   },
   en: {
     hero: {
-      invite: "We invite you\nto share the happiness of\nAnni and Levani",
+      invite: "We invite you\nto share the happiness of\nLevani and Anni",
       dear: "Dear",
       country: "Georgia",
     },
