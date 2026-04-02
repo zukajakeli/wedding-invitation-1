@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { useGLTF, Environment, Center, OrbitControls } from "@react-three/drei";
 import { useThree } from "@react-three/fiber";
@@ -96,8 +96,9 @@ useGLTF.preload("/balcony.glb");
 const BALCONY_LIFT_Y_LANDSCAPE = 0.26;
 const BALCONY_LIFT_Y_PORTRAIT_EXTRA = 0.24;
 
-/** 0 = top of viewport, 1 = bottom. ~1/3 places the focal point in the upper third. */
-const BALCONY_VERTICAL_ANCHOR_FROM_TOP = 1 / 3;
+/** 0 = top of viewport, 1 = bottom. */
+const BALCONY_VERTICAL_ANCHOR_FROM_TOP_DESKTOP = 1 / 3;
+const BALCONY_VERTICAL_ANCHOR_FROM_TOP_MOBILE = 0.5;
 
 /** World-space Y offset so the balcony sits higher in the frame; portrait gets extra lift. */
 function balconyLiftY(aspect: number) {
@@ -107,11 +108,18 @@ function balconyLiftY(aspect: number) {
 }
 
 function closedCameraZ(aspect: number) {
-  return aspect < 1 ? 3.85 : 2.75;
+  // Portrait: pull camera back a bit so the model feels less tight on phones.
+  return aspect < 1 ? 2.48 : 2.75;
 }
 
 function cameraFovDeg(aspect: number) {
-  return aspect < 1 ? 50 : 38;
+  return aspect < 1 ? 49 : 38;
+}
+
+function verticalAnchorFromTop(aspect: number) {
+  return aspect < 1
+    ? BALCONY_VERTICAL_ANCHOR_FROM_TOP_MOBILE
+    : BALCONY_VERTICAL_ANCHOR_FROM_TOP_DESKTOP;
 }
 
 /**
@@ -122,23 +130,9 @@ function composeShiftY(aspect: number) {
   const z = closedCameraZ(aspect);
   const fovRad = THREE.MathUtils.degToRad(cameraFovDeg(aspect));
   const halfViewportWorld = Math.tan(fovRad / 2) * z;
+  const anchor = verticalAnchorFromTop(aspect);
   // Screen center = 0.5 from top; shift subject by (anchor - 0.5) in viewport fractions → world offset at depth z
-  return (BALCONY_VERTICAL_ANCHOR_FROM_TOP - 0.5) * 2 * halfViewportWorld;
-}
-
-/** Portrait viewports have a much narrower horizontal FOV at the same vertical FOV — widen FOV and pull back so the balcony isn’t clipped on phones. */
-function ResponsiveFrustum() {
-  const { camera, viewport } = useThree();
-
-  useEffect(() => {
-    if (!(camera instanceof THREE.PerspectiveCamera)) return;
-    const aspect = viewport.width / viewport.height;
-    // Wider vertical FOV on narrow screens → more horizontal coverage (R3F keeps aspect in sync with the canvas)
-    camera.fov = aspect < 1 ? 50 : 38;
-    camera.updateProjectionMatrix();
-  }, [camera, viewport.width, viewport.height]);
-
-  return null;
+  return (anchor - 0.5) * 2 * halfViewportWorld;
 }
 
 function CameraRig({ isOpen, controlsRef }: { isOpen: boolean, controlsRef: React.RefObject<OrbitControlsImpl | null> }) {
@@ -198,7 +192,7 @@ function CameraRig({ isOpen, controlsRef }: { isOpen: boolean, controlsRef: Reac
 function ScaledBalconyModel({ isOpen }: { isOpen: boolean }) {
   const { viewport } = useThree();
   const aspect = viewport.width / viewport.height;
-  const scale = aspect < 1 ? 1.0 : 1.2;
+  const scale = aspect < 1 ? 1.32 : 1.2;
   const liftY = balconyLiftY(aspect);
 
   return (
@@ -245,10 +239,21 @@ export function BalconyScene({
   pointerEventsEnabled?: boolean;
 }) {
   const controlsRef = useRef<OrbitControlsImpl | null>(null);
+  const [isPortraitViewport, setIsPortraitViewport] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsPortraitViewport(window.innerHeight > window.innerWidth);
+    };
+
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   return (
     <div
-      className={`absolute inset-0 z-0 min-h-0 min-w-0 w-full h-full bg-[#1a1818] ${pointerEventsEnabled ? "pointer-events-auto" : "pointer-events-none"}`}
+      className={`balcony-scene absolute inset-0 z-0 min-h-0 min-w-0 w-full h-full bg-[#1a1818] ${pointerEventsEnabled ? "pointer-events-auto" : "pointer-events-none"}`}
       style={{
         backgroundImage: "radial-gradient(circle at center, rgba(0,0,0,0.1) 20%, rgba(0,0,0,0.85) 100%), url('/mtkvari.jpg')",
         backgroundSize: "100% 100%, cover",
@@ -257,9 +262,13 @@ export function BalconyScene({
       }}
     >
       <Canvas
+        key={isPortraitViewport ? "portrait" : "landscape"}
         shadows
         className="!block h-full w-full"
-        camera={{ position: [0, BALCONY_LIFT_Y_LANDSCAPE, 1.8], fov: 35 }}
+        camera={{
+          position: [0, BALCONY_LIFT_Y_LANDSCAPE, 1.8],
+          fov: isPortraitViewport ? cameraFovDeg(0.8) : cameraFovDeg(1.2),
+        }}
         gl={{ alpha: true }}
         style={{
           pointerEvents: pointerEventsEnabled ? "auto" : "none",
@@ -269,7 +278,6 @@ export function BalconyScene({
           display: "block",
         }}
       >
-        <ResponsiveFrustum />
         <ambientLight intensity={1.2} />
         <directionalLight position={[5, 10, 5]} intensity={1.5} castShadow />
         <Environment preset="city" />

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { translations, Language } from "@/locales/translations";
 
 export function Countdown({ lang }: { lang: Language }) {
@@ -35,12 +36,30 @@ export function Countdown({ lang }: { lang: Language }) {
   }, [weddingDate]);
 
   return (
-    <div className="flex flex-col items-center py-20 w-full" style={{ backgroundColor: '#838769' }}>
-      <h2 className="font-serif italic text-4xl sm:text-5xl mb-3 text-white text-center">{t.title}</h2>
-      <p className="font-serif text-sm sm:text-base text-white/80 mb-12 text-center tracking-wide">
+    <div className="relative overflow-hidden flex flex-col items-center py-20 w-full" style={{ backgroundColor: '#838769' }}>
+      <Image
+        src="/assets/grape-cluster.svg"
+        alt=""
+        width={150}
+        height={194}
+        unoptimized
+        className="absolute -left-6 -top-6 w-[min(24vw,150px)] h-auto opacity-[0.2] rotate-[-12deg] pointer-events-none hidden md:block"
+        aria-hidden
+      />
+      <Image
+        src="/assets/grape-cluster.svg"
+        alt=""
+        width={150}
+        height={194}
+        unoptimized
+        className="absolute -right-6 -top-6 w-[min(24vw,150px)] h-auto opacity-[0.2] rotate-[12deg] scale-x-[-1] pointer-events-none hidden md:block"
+        aria-hidden
+      />
+      <h2 className="relative z-10 font-serif italic text-4xl sm:text-5xl mb-3 text-white text-center">{t.title}</h2>
+      <p className="relative z-10 font-serif text-sm sm:text-base text-white/80 mb-12 text-center tracking-wide">
         {t.subtitle}
       </p>
-      <div className="flex gap-3 sm:gap-6 text-center justify-center">
+      <div className="relative z-10 flex gap-3 sm:gap-6 text-center justify-center">
         {[
           { label: t.days, value: timeLeft.days },
           { label: t.hours, value: timeLeft.hours },

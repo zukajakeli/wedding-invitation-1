@@ -9,13 +9,15 @@ import { VenueMap } from "./Map";
 import Image from "next/image";
 import { MapPin, CalendarDays, Utensils, Volume2, VolumeX, Globe, Heart, Wine, Church, Clock, ExternalLink } from "lucide-react";
 
-function appleMapsUrl(lat: number, lng: number, label: string) {
-  return `https://maps.apple.com/?ll=${lat},${lng}&q=${encodeURIComponent(label)}`;
+function googleMapsUrl(lat: number, lng: number) {
+  return `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
 }
 import { BalconyScene } from "./BalconyScene";
 import { RsvpForm } from "./RsvpForm";
 import { useProgress } from "@react-three/drei";
 import { HeroGrapeDecor, SectionGrapeDecor, MaskedGrapes } from "./GrapeDecorations";
+import { TimelineKvevriConnector } from "./TimelineKvevriConnector";
+import { TimelineKvevriJourney } from "./TimelineKvevriJourney";
 
 function LoadingOverlay() {
   const { progress } = useProgress();
@@ -29,7 +31,7 @@ function LoadingOverlay() {
           className="fixed inset-0 z-[100] flex items-center justify-center bg-[#F3EFE7]"
         >
           <div className="flex flex-col items-center gap-6">
-            <h1 className="text-4xl md:text-5xl font-cursive text-stone-800">
+            <h1 className="text-4xl md:text-5xl font-handwritten text-stone-800">
               Levan & Anni
             </h1>
             <div className="w-32 h-[1px] bg-stone-300 relative overflow-hidden">
@@ -57,7 +59,10 @@ export function MainApp({ name, lang }: { name: string; lang: Language }) {
   const [isEnded, setIsEnded] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const timetableRootRef = useRef<HTMLDivElement>(null);
+  const timetableConnectorRefs = useRef<(HTMLDivElement | null)[]>([]);
   const t = translations[lang];
+  const timetableConnectorCount = Math.max(0, t.timetable.items.length - 1);
 
   useEffect(() => {
     if (!isEnded) {
@@ -151,7 +156,7 @@ export function MainApp({ name, lang }: { name: string; lang: Language }) {
             transition={{ duration: 0.5, delay: 0.1 }}
             className={`flex flex-col items-center ${isEnded ? "pointer-events-auto" : "pointer-events-none"}`}
           >
-            <h1 className="text-6xl md:text-8xl font-cursive text-stone-800 mb-8">
+            <h1 className="text-6xl md:text-8xl font-handwritten text-stone-800 mb-8">
               Levan & Anni
             </h1>
             <div className="w-16 h-px bg-stone-300 mb-8" />
@@ -171,14 +176,18 @@ export function MainApp({ name, lang }: { name: string; lang: Language }) {
               </div>
             )}
 
-            <div className="flex flex-col sm:flex-row gap-8 text-stone-500 font-serif text-sm tracking-widest uppercase">
+            <div className="flex flex-col sm:flex-row gap-8 text-stone-600 font-serif text-base md:text-lg tracking-[0.12em] uppercase">
               <div className="flex items-center gap-2">
                 <CalendarDays size={18} />
-                <span>25.09.2026</span>
+                <span className="font-cursive text-2xl md:text-3xl tracking-normal normal-case text-stone-700">
+                  19.04.2026
+                </span>
               </div>
               <div className="flex items-center gap-2">
                 <MapPin size={18} />
-                <span>Tbilisi</span>
+                <span className="font-cursive text-2xl md:text-3xl tracking-normal normal-case text-stone-700">
+                  Georgia
+                </span>
               </div>
             </div>
           </motion.div>
@@ -224,7 +233,10 @@ export function MainApp({ name, lang }: { name: string; lang: Language }) {
             </p>
 
             {/* Main timeline container */}
-            <div className="relative flex flex-col md:flex-row w-full justify-between items-stretch px-4 md:px-0">
+            <div
+              ref={timetableRootRef}
+              className="relative flex flex-col md:flex-row w-full justify-between items-stretch overflow-visible px-4 md:px-0"
+            >
 
               {/* Desktop: horizontal connector */}
               <div className="hidden md:block absolute left-12 right-12 top-[85px] h-[2px] bg-stone-300 z-0" />
@@ -243,10 +255,13 @@ export function MainApp({ name, lang }: { name: string; lang: Language }) {
                 const icons = [Church, Wine, Heart, Utensils];
                 const Icon = icons[index % icons.length];
                 const isLast = index === t.timetable.items.length - 1;
+                const isRight = index % 2 === 1;
 
                 return (
                   <div key={index} className="relative z-10 w-full md:w-1/4 group">
-                    <div className="flex flex-row md:flex-col items-center w-full gap-3 md:gap-0">
+                    <div
+                      className={`flex items-center w-full gap-3 md:gap-0 max-w-[360px] md:max-w-none md:flex-col ${isRight ? "flex-row-reverse md:flex-col ml-auto" : "flex-row md:flex-col mr-auto"}`}
+                    >
                       <div
                         className="shrink-0 w-16 text-center py-1.5 rounded-full text-white font-serif text-sm shadow-sm md:mb-6"
                         style={{ backgroundColor: '#4A5B45' }}
@@ -254,44 +269,37 @@ export function MainApp({ name, lang }: { name: string; lang: Language }) {
                         {item.time}
                       </div>
 
-                      <div className="shrink-0 w-[50px] h-[50px] rounded-full bg-white border border-stone-200 shadow-sm flex items-center justify-center md:mb-6 group-hover:scale-110 transition-transform duration-300">
-                        <Icon size={20} style={{ color: '#4A5B45' }} />
-                      </div>
+                      <div className="flex min-w-0 flex-1 flex-row items-center gap-1 md:max-w-[200px] md:flex-none md:flex-col md:gap-0">
+                        <div className="shrink-0 w-[50px] h-[50px] rounded-full bg-white border border-stone-200 shadow-sm flex items-center justify-center md:mb-6 group-hover:scale-110 transition-transform duration-300">
+                          <Icon size={20} style={{ color: '#4A5B45' }} />
+                        </div>
 
-                      <div className="min-w-0 flex-1 md:flex-none md:text-center md:max-w-[200px]">
-                        <h3 className="font-serif text-lg text-stone-800 mb-1">{item.title}</h3>
-                        <p className="font-sans text-stone-500 text-xs leading-relaxed">{item.desc}</p>
+                        <div className={`min-w-0 flex-1 md:flex-none md:text-center ${isRight ? "text-right md:text-center" : "text-left md:text-center"}`}>
+                          <h3 className="font-serif text-lg text-stone-800 mb-1">{item.title}</h3>
+                          <p className="font-sans text-stone-500 text-xs leading-relaxed">{item.desc}</p>
+                        </div>
                       </div>
                     </div>
 
-                    {/* Mobile only: grape connector in the gap between slots (not over pills) */}
+                    {/* Mobile only: zig-zag curve + grapes (single kvevri overlay below) */}
                     {!isLast ? (
                       <div
-                        className="md:hidden flex flex-row items-center justify-start gap-3 pointer-events-none py-3"
-                        aria-hidden
+                        ref={(el) => {
+                          timetableConnectorRefs.current[index] = el;
+                        }}
+                        className="md:hidden w-full"
                       >
-                        <div className="w-16 shrink-0 flex justify-center items-center">
-                          {index % 2 === 0 ? (
-                            <MaskedGrapes className="w-10 h-12 opacity-[0.32]" />
-                          ) : (
-                            <Image
-                              src="/assets/grape-cluster.svg"
-                              alt=""
-                              width={40}
-                              height={52}
-                              unoptimized
-                              className="w-9 h-auto opacity-[0.22] rotate-[-12deg]"
-                              aria-hidden
-                            />
-                          )}
-                        </div>
-                        <div className="w-[50px] shrink-0" />
-                        <div className="flex-1 min-w-0" />
+                        <TimelineKvevriConnector isRight={isRight} />
                       </div>
                     ) : null}
                   </div>
                 );
               })}
+              <TimelineKvevriJourney
+                rootRef={timetableRootRef}
+                connectorRefs={timetableConnectorRefs}
+                connectorCount={timetableConnectorCount}
+              />
             </div>
           </div>
         </section>
@@ -376,7 +384,7 @@ export function MainApp({ name, lang }: { name: string; lang: Language }) {
               />
               <div className="relative w-full max-w-4xl mx-auto">
                 <a
-                  href={appleMapsUrl(41.8422734, 44.7209856, t.location.church.venue)}
+                  href={googleMapsUrl(41.8422734, 44.7209856)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="absolute top-3 left-3 z-[1000] inline-flex items-center gap-2 rounded-lg bg-white/95 px-3 py-2 text-xs font-serif tracking-wide text-stone-800 shadow-md backdrop-blur-sm border border-stone-200/90 hover:bg-white transition-colors"
@@ -418,7 +426,7 @@ export function MainApp({ name, lang }: { name: string; lang: Language }) {
               />
               <div className="relative w-full max-w-4xl mx-auto">
                 <a
-                  href={appleMapsUrl(41.9382057, 44.6996392, t.location.villa.venue)}
+                  href={googleMapsUrl(41.9382057, 44.6996392)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="absolute top-3 left-3 z-[1000] inline-flex items-center gap-2 rounded-lg bg-white/95 px-3 py-2 text-xs font-serif tracking-wide text-stone-800 shadow-md backdrop-blur-sm border border-stone-200/90 hover:bg-white transition-colors"
