@@ -255,7 +255,7 @@ export function MainApp({ name, lang }: { name: string; lang: Language }) {
               <div className="flex items-center gap-2">
                 <MapPin size={18} />
                 <span className="font-serif italic text-2xl md:text-3xl tracking-normal normal-case text-stone-700">
-                  Georgia
+                  {t.hero.country}
                 </span>
               </div>
             </div>
@@ -452,7 +452,7 @@ export function MainApp({ name, lang }: { name: string; lang: Language }) {
 
             <article className="w-full mb-20 md:mb-28">
               <p className="font-serif text-2xl md:text-3xl text-[#3D4839] mb-1">
-                {t.location.church.ceremonyGeo}
+                {/* {t.location.church.ceremonyGeo} */}
               </p>
               {t.location.church.ceremonyLabel ? (
                 <p className="font-serif text-sm md:text-base text-stone-500 mb-3">

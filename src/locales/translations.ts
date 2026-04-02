@@ -3,8 +3,9 @@ export type Language = "ka" | "en" | "ru" | "fr";
 export const translations = {
   ka: {
     hero: {
-      invite: "გიწვევთ\nანნისა და ლევანის\nბედნიერების გასაზიარებლად",
+      invite: "გიწვევთ\nლევანისა და ანნის\nბედნიერების გასაზიარებლად",
       dear: "ძვირფასო",
+      country: "საქართველო",
     },
     countdown: {
       title: "დრო ქორწილამდე",
@@ -20,7 +21,7 @@ export const translations = {
       btn: "რუკაზე გახსნა",
       church: {
         ceremonyGeo: "ჯვრისწერა",
-        ceremonyLabel: "",
+        ceremonyLabel: "ჯვრისწერა",
         venue: "სვეტიცხოვლის საკათედრო ტაძარი",
         vicinity: "მცხეთა",
         time: "14:00",
@@ -38,7 +39,7 @@ export const translations = {
       title: "განრიგი",
       subtitle: "რას გიმზადებთ ამ დღისთვის",
       items: [
-        { time: "14:00", title: "ჯვრის წერა", desc: "საეკლესიო რიტუალი" },
+        { time: "14:00", title: "ჯვრისწერა", desc: "საეკლესიო რიტუალი" },
         { time: "16:00", title: "Welcome", desc: "სტუმრების მიღება" },
         { time: "16:30", title: "ხელმოწერის ცერემონია", desc: "ოფიციალური ნაწილი" },
         { time: "17:00", title: "გალა ვახშამი", desc: "სადღესასწაულო ბანკეტი" },
@@ -70,6 +71,7 @@ export const translations = {
     hero: {
       invite: "We invite you\nto share the happiness of\nAnni and Levani",
       dear: "Dear",
+      country: "Georgia",
     },
     countdown: {
       title: "Time until wedding",
@@ -133,8 +135,9 @@ export const translations = {
   },
   ru: {
     hero: {
-      invite: "Приглашаем вас\nразделить счастье\nАнни и Левани",
+      invite: "Приглашаем вас\nразделить счастье\nЛевани и Анни",
       dear: "Дорогой(ая)",
+      country: "Грузия",
     },
     countdown: {
       title: "До свадьбы осталось",
@@ -198,8 +201,9 @@ export const translations = {
   },
   fr: {
     hero: {
-      invite: "Nous vous invitons\nà partager le bonheur de\nAnni et Levani",
+      invite: "Nous vous invitons\nà partager le bonheur de\nLevani et Anni",
       dear: "Cher(e)",
+      country: "Géorgie",
     },
     countdown: {
       title: "Temps avant le mariage",
