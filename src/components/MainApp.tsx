@@ -151,7 +151,7 @@ export function MainApp({ name, lang }: { name: string; lang: Language }) {
       </motion.div>
 
       {/* TOP SECTION: Balcony + Invitation Behind It */}
-      <div className="relative w-full h-[100svh] overflow-hidden flex flex-col items-center justify-center">
+      <div className="relative w-full hero-viewport-height overflow-hidden flex flex-col items-center justify-center">
 
         {/* Full-bleed balcony backdrop (mobile gutters, WebGL load, etc.) */}
         <div
