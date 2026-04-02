@@ -2,7 +2,6 @@
 
 import {
   useEffect,
-  useId,
   useLayoutEffect,
   useRef,
   useState,
@@ -14,10 +13,9 @@ import {
 const VB_W = 360;
 const VB_H = 84;
 
-/** Pivot (belly center) in glyph space; scale around this so path anchor stays correct. */
-const K_PX = 14;
-const K_PY = 21;
-const KVEVRI_SCALE = 1.46;
+/** Bowl GIF size in SVG user units (centered on path). */
+const BOWL_SIZE = 72;
+const BOWL_HALF = BOWL_SIZE / 2;
 
 function segmentPathPixels(
   cRect: DOMRectReadOnly,
@@ -36,109 +34,6 @@ function segmentPathPixels(
   return `M ${X(56)} ${Y(10)} C ${X(122)} ${Y(66)}, ${X(242)} ${Y(60)}, ${X(308)} ${Y(74)}`;
 }
 
-/** Initials as HTML inside foreignObject — survives non-uniform SVG scaling (unlike tiny &lt;text&gt;). */
-function KvevriInitials() {
-  return (
-    <foreignObject x="0" y="13" width="28" height="13" className="overflow-visible">
-      <div
-        className="flex h-full w-full items-center justify-center font-serif text-[7px] font-semibold italic leading-none tracking-tight text-[#f5ead8]"
-        style={{
-          textShadow:
-            "0 0 2px #1a0f0a, 0 1px 3px rgba(0,0,0,0.45), 0 -1px 1px rgba(255,255,255,0.2)",
-        }}
-      >
-        L &amp; A
-      </div>
-    </foreignObject>
-  );
-}
-
-/** Georgian qvevri: narrow neck, waxed rim, banded egg-shaped clay body, lugs. */
-function KvevriGlyph({ gradId }: { gradId: string }) {
-  return (
-    <g>
-      <ellipse
-        cx="14"
-        cy="12.5"
-        rx="5.4"
-        ry="1.05"
-        fill="none"
-        stroke="#4a3529"
-        strokeWidth="0.32"
-        opacity={0.55}
-      />
-      <ellipse
-        cx="14"
-        cy="17.2"
-        rx="6.8"
-        ry="1.2"
-        fill="none"
-        stroke="#4a3529"
-        strokeWidth="0.32"
-        opacity={0.48}
-      />
-      <ellipse
-        cx="14"
-        cy="22.5"
-        rx="7.35"
-        ry="1.1"
-        fill="none"
-        stroke="#4a3529"
-        strokeWidth="0.3"
-        opacity={0.42}
-      />
-      <ellipse
-        cx="14"
-        cy="27.2"
-        rx="6.9"
-        ry="1"
-        fill="none"
-        stroke="#4a3529"
-        strokeWidth="0.28"
-        opacity={0.36}
-      />
-
-      <path
-        d="M 5 10.5 Q 2.4 11.6 2.6 14.2 Q 3.1 16.2 5.2 15.4"
-        fill="none"
-        stroke="#3d2a22"
-        strokeWidth="0.75"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M 23 10.5 Q 25.6 11.6 25.4 14.2 Q 24.9 16.2 22.8 15.4"
-        fill="none"
-        stroke="#3d2a22"
-        strokeWidth="0.75"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-
-      <path
-        d="M 14 3.2
-           C 16.8 3.2 17.6 4.2 17.4 5.8 L 16.6 8.4
-           C 16.3 9.6 16.9 10.4 17.8 10.9
-           C 22.8 12.8 25.2 18.2 24.8 24.5
-           C 24.4 30.5 20.2 35.2 14 36.2
-           C 7.8 35.2 3.6 30.5 3.2 24.5
-           C 2.8 18.2 5.2 12.8 10.2 10.9
-           C 11.1 10.4 11.7 9.6 11.4 8.4 L 10.6 5.8
-           C 10.4 4.2 11.2 3.2 14 3.2 Z"
-        fill={`url(#${gradId})`}
-        stroke="#261a14"
-        strokeWidth="0.42"
-      />
-
-      <KvevriInitials />
-
-      <ellipse cx="14" cy="5.1" rx="3.1" ry="1.15" fill="#5a4234" opacity={0.92} />
-      <ellipse cx="14" cy="4.35" rx="2.35" ry="0.78" fill="#8a6b52" opacity={0.75} />
-      <ellipse cx="14" cy="4.05" rx="1.55" ry="0.45" fill="#2a1e18" opacity={0.35} />
-    </g>
-  );
-}
-
 type Props = {
   rootRef: RefObject<HTMLDivElement | null>;
   connectorRefs: MutableRefObject<(HTMLDivElement | null)[]>;
@@ -146,16 +41,13 @@ type Props = {
 };
 
 /**
- * One kvevri follows all mobile connector curves in order; jumps between segments (separate M commands).
+ * Bowl GIF follows mobile connector curves (GIF handles its own spin).
  */
 export function TimelineKvevriJourney({
   rootRef,
   connectorRefs,
   connectorCount,
 }: Props) {
-  const reactId = useId().replace(/[^a-zA-Z0-9]/g, "");
-  const gradId = `tt-kv-grad-${reactId}`;
-
   const [svg, setSvg] = useState<{
     pathD: string;
     w: number;
@@ -253,8 +145,6 @@ export function TimelineKvevriJourney({
   const durSec = 22 + connectorCount * 8;
 
   const rafRef = useRef(0);
-  const prevTangentRef = useRef<number | null>(null);
-  const prevPtRef = useRef<{ x: number; y: number } | null>(null);
 
   useLayoutEffect(() => {
     if (!svg) return;
@@ -262,23 +152,6 @@ export function TimelineKvevriJourney({
     let cancelled = false;
     const durationMs = durSec * 1000;
     const t0Ref = { current: null as number | null };
-    prevTangentRef.current = null;
-    prevPtRef.current = null;
-
-    function unwrapTangent(prev: number | null, rawDeg: number): number {
-      if (prev === null) return rawDeg;
-      let delta = rawDeg - prev;
-      delta = ((((delta + 180) % 360) + 360) % 360) - 180;
-      return prev + delta;
-    }
-
-    /** Keep neck roughly “up”: if path wants ±100°, show upright rotation instead. */
-    function uprightDisplayAngle(tangentDeg: number): number {
-      let a = tangentDeg;
-      if (a > 87) a -= 180;
-      else if (a < -87) a += 180;
-      return a;
-    }
 
     function loop(now: number) {
       if (cancelled) return;
@@ -300,27 +173,10 @@ export function TimelineKvevriJourney({
       const t = (((now - t0Ref.current) % durationMs) / durationMs);
       const d = t * total;
       const pt = p.getPointAtLength(d);
-      const prevPt = prevPtRef.current;
-      if (prevPt) {
-        const jump = Math.hypot(pt.x - prevPt.x, pt.y - prevPt.y);
-        if (jump > 35) prevTangentRef.current = null;
-      }
-      prevPtRef.current = { x: pt.x, y: pt.y };
-
-      const eps = Math.min(4, total * 0.025);
-      const d2 = d < total - eps ? d + eps : Math.max(0, d - eps);
-      const pt2 = p.getPointAtLength(d2);
-      const raw = Math.atan2(pt2.y - pt.y, pt2.x - pt.x) * (180 / Math.PI);
-      const rawSafe = Number.isFinite(raw) ? raw : 0;
-
-      const tangent = unwrapTangent(prevTangentRef.current, rawSafe);
-      prevTangentRef.current = tangent;
-
-      const displayAngle = uprightDisplayAngle(tangent);
 
       r.setAttribute(
         "transform",
-        `translate(${pt.x},${pt.y}) rotate(${displayAngle}) translate(${-K_PX},${-K_PY})`
+        `translate(${pt.x},${pt.y}) translate(${-BOWL_HALF},${-BOWL_HALF})`
       );
 
       rafRef.current = requestAnimationFrame(loop);
@@ -367,23 +223,15 @@ export function TimelineKvevriJourney({
         preserveAspectRatio="none"
         aria-hidden
       >
-        <defs>
-          <linearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#8b6f56" />
-            <stop offset="35%" stopColor="#6b4e3d" />
-            <stop offset="72%" stopColor="#4a3529" />
-            <stop offset="100%" stopColor="#34241c" />
-          </linearGradient>
-        </defs>
-
         <path ref={pathRef} d={svg.pathD} fill="none" stroke="none" />
 
-        <g ref={riderRef} opacity={0.92}>
-          <g
-            transform={`translate(${K_PX},${K_PY}) scale(${KVEVRI_SCALE}) translate(${-K_PX},${-K_PY})`}
-          >
-            <KvevriGlyph gradId={gradId} />
-          </g>
+        <g ref={riderRef} opacity={0.95}>
+          <image
+            href="/gizgizi.gif"
+            width={BOWL_SIZE}
+            height={BOWL_SIZE}
+            preserveAspectRatio="xMidYMid meet"
+          />
         </g>
       </svg>
     </div>

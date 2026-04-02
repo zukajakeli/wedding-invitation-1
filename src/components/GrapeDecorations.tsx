@@ -56,11 +56,21 @@ export function HeroGrapeDecor() {
 }
 
 /** Corner accents for content sections (timetable, dress code, etc.). */
-export function SectionGrapeDecor() {
+export function SectionGrapeDecor({
+  showMobileCorners = false,
+}: {
+  /** When true, masked corner vines show below `lg` (e.g. location). Timetable keeps default to avoid crowding the mobile layout. */
+  showMobileCorners?: boolean;
+} = {}) {
+  const cornerLgOnly = showMobileCorners ? "" : "hidden lg:block";
   return (
     <>
-      <MaskedGrapes className="absolute -left-[8%] top-1/2 -translate-y-1/2 w-[min(32vw,240px)] h-[min(25vw,200px)] opacity-[0.11] -rotate-[5deg] hidden lg:block" />
-      <MaskedGrapes className="absolute -right-[6%] top-8 w-[min(28vw,200px)] h-[min(22vw,170px)] opacity-[0.09] rotate-[8deg] scale-x-[-1] hidden lg:block" />
+      <MaskedGrapes
+        className={`absolute -left-[10%] sm:-left-[8%] top-[18%] sm:top-1/2 sm:-translate-y-1/2 w-[min(38vw,200px)] lg:w-[min(32vw,240px)] h-[min(30vw,160px)] lg:h-[min(25vw,200px)] opacity-[0.09] lg:opacity-[0.11] -rotate-[5deg] pointer-events-none ${cornerLgOnly}`}
+      />
+      <MaskedGrapes
+        className={`absolute -right-[8%] sm:-right-[6%] top-6 sm:top-8 w-[min(34vw,180px)] lg:w-[min(28vw,200px)] h-[min(26vw,150px)] lg:h-[min(22vw,170px)] opacity-[0.08] lg:opacity-[0.09] rotate-[8deg] scale-x-[-1] pointer-events-none ${cornerLgOnly}`}
+      />
       <Image
         src="/assets/grape-cluster.svg"
         alt=""
@@ -69,6 +79,17 @@ export function SectionGrapeDecor() {
         unoptimized
         className="absolute right-4 bottom-6 w-[min(20vw,140px)] h-auto opacity-[0.13] rotate-[6deg] md:right-8 md:bottom-10"
       />
+      {showMobileCorners ? (
+        <Image
+          src="/assets/grape-cluster.svg"
+          alt=""
+          width={120}
+          height={155}
+          unoptimized
+          className="absolute left-2 bottom-32 lg:hidden w-[min(22vw,120px)] h-auto opacity-[0.11] -rotate-[8deg] scale-x-[-1] pointer-events-none"
+          aria-hidden
+        />
+      ) : null}
     </>
   );
 }

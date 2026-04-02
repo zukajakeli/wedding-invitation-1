@@ -3,7 +3,7 @@ export type Language = "ka" | "en" | "ru" | "fr";
 export const translations = {
   ka: {
     hero: {
-      invite: "სიყვარულით გიწვევთ\nლევანი და ანნის\nბედნიერების გასაზიარებლად",
+      invite: "გიწვევთ\nანნისა და ლევანის\nბედნიერების გასაზიარებლად",
       dear: "ძვირფასო",
     },
     countdown: {
@@ -68,7 +68,7 @@ export const translations = {
   },
   en: {
     hero: {
-      invite: "With love, we invite you\nto share the happiness of\nLevan and Anni",
+      invite: "We invite you\nto share the happiness of\nAnni and Levani",
       dear: "Dear",
     },
     countdown: {
@@ -133,7 +133,7 @@ export const translations = {
   },
   ru: {
     hero: {
-      invite: "С любовью приглашаем вас\nразделить счастье\nЛевана и Анни",
+      invite: "Приглашаем вас\nразделить счастье\nАнни и Левани",
       dear: "Дорогой(ая)",
     },
     countdown: {
@@ -198,7 +198,7 @@ export const translations = {
   },
   fr: {
     hero: {
-      invite: "Avec amour, nous vous invitons\nà partager le bonheur de\nLevan et Anni",
+      invite: "Nous vous invitons\nà partager le bonheur de\nAnni et Levani",
       dear: "Cher(e)",
     },
     countdown: {

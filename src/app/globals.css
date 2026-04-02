@@ -5,6 +5,8 @@
   --font-cursive: var(--font-great-vibes);
   --font-cursive-title: var(--font-alex-brush);
   --font-handwritten: var(--font-parisienne);
+  /* Natural pen handwriting — guest names, informal lines */
+  --font-pen: var(--font-caveat);
 }
 
 @layer utilities {

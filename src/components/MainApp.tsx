@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, type CSSProperties } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { translations, Language } from "@/locales/translations";
@@ -8,16 +8,26 @@ import { Countdown } from "./Countdown";
 import { VenueMap } from "./Map";
 import Image from "next/image";
 import { MapPin, CalendarDays, Utensils, Volume2, VolumeX, Globe, Heart, Wine, Church, Clock, ExternalLink } from "lucide-react";
-
-function googleMapsUrl(lat: number, lng: number) {
-  return `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
-}
 import { BalconyScene } from "./BalconyScene";
 import { RsvpForm } from "./RsvpForm";
 import { useProgress } from "@react-three/drei";
 import { HeroGrapeDecor, SectionGrapeDecor, MaskedGrapes } from "./GrapeDecorations";
 import { TimelineKvevriConnector } from "./TimelineKvevriConnector";
 import { TimelineKvevriJourney } from "./TimelineKvevriJourney";
+
+function googleMapsUrl(lat: number, lng: number) {
+  return `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+}
+
+/** Same as BalconyScene wrapper — full-bleed under hero so gutters / load never flash invitation cream. */
+const balconyHeroBackdropStyle: CSSProperties = {
+  backgroundColor: "#1a1818",
+  backgroundImage:
+    "radial-gradient(circle at center, rgba(0,0,0,0.1) 20%, rgba(0,0,0,0.85) 100%), url('/mtkvari.jpg')",
+  backgroundSize: "100% 100%, cover",
+  backgroundRepeat: "no-repeat, no-repeat",
+  backgroundPosition: "center, center",
+};
 
 function LoadingOverlay() {
   const { progress } = useProgress();
@@ -32,7 +42,7 @@ function LoadingOverlay() {
         >
           <div className="flex flex-col items-center gap-6">
             <h1 className="text-4xl md:text-5xl font-handwritten text-stone-800">
-              Levan & Anni
+              Levani & Anni
             </h1>
             <div className="w-32 h-[1px] bg-stone-300 relative overflow-hidden">
               <motion.div
@@ -141,15 +151,36 @@ export function MainApp({ name, lang }: { name: string; lang: Language }) {
       </motion.div>
 
       {/* TOP SECTION: Balcony + Invitation Behind It */}
-      <div className="relative w-full h-[100svh] overflow-hidden bg-stone-100 flex flex-col items-center justify-center">
+      <div className="relative w-full h-[100svh] overflow-hidden flex flex-col items-center justify-center">
 
-        {/* Full-bleed grape ornaments (behind invitation copy) */}
-        <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+        {/* Full-bleed balcony backdrop (mobile gutters, WebGL load, etc.) */}
+        <div
+          className="absolute inset-0 z-0"
+          style={balconyHeroBackdropStyle}
+          aria-hidden
+        />
+
+        {/* Invitation cream surface — hidden until sequence ends */}
+        <motion.div
+          className="absolute inset-0 z-[1] bg-stone-100 pointer-events-none"
+          initial={false}
+          animate={{ opacity: isEnded ? 1 : 0 }}
+          transition={{ duration: 0.5 }}
+          aria-hidden
+        />
+
+        {/* Full-bleed grape ornaments (only with invitation) */}
+        <motion.div
+          className="absolute inset-0 z-[2] pointer-events-none overflow-hidden"
+          initial={false}
+          animate={{ opacity: isEnded ? 1 : 0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+        >
           <HeroGrapeDecor />
-        </div>
+        </motion.div>
 
         {/* Background Content (Invitation) */}
-        <div className="absolute inset-0 z-[1] flex flex-col items-center justify-center text-center px-4 pt-20 w-full max-w-4xl mx-auto">
+        <div className="absolute inset-0 z-[3] flex flex-col items-center justify-center text-center px-4 pt-20 w-full max-w-4xl mx-auto">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: isEnded ? 1 : 0, scale: isEnded ? 1 : 0.95 }}
@@ -157,24 +188,45 @@ export function MainApp({ name, lang }: { name: string; lang: Language }) {
             className={`flex flex-col items-center ${isEnded ? "pointer-events-auto" : "pointer-events-none"}`}
           >
             <h1 className="text-6xl md:text-8xl font-handwritten text-stone-800 mb-8">
-              Levan & Anni
+              Levani & Anni
             </h1>
             <div className="w-16 h-px bg-stone-300 mb-8" />
+
+            {name && (
+              <div className="flex flex-col items-center text-center max-w-md w-full mb-10 px-2">
+                <p className="font-serif text-stone-500 text-sm tracking-widest uppercase mb-2">
+                  {t.hero.dear}
+                </p>
+                <p className="font-pen text-3xl md:text-4xl text-stone-800 mb-3 leading-tight tracking-wide">
+                  {name}
+                </p>
+                <div className="flex items-center justify-center gap-5 w-full max-w-xs opacity-[0.28]">
+                  <Image
+                    src="/assets/grape-cluster.svg"
+                    alt=""
+                    width={44}
+                    height={57}
+                    unoptimized
+                    className="w-9 h-auto scale-x-[-1]"
+                    aria-hidden
+                  />
+                  <div className="flex-1 h-px bg-stone-400/60 max-w-[100px]" />
+                  <Image
+                    src="/assets/grape-cluster.svg"
+                    alt=""
+                    width={44}
+                    height={57}
+                    unoptimized
+                    className="w-9 h-auto"
+                    aria-hidden
+                  />
+                </div>
+              </div>
+            )}
 
             <p className="font-serif text-lg md:text-2xl text-stone-600 leading-relaxed max-w-lg whitespace-pre-line mb-12">
               {t.hero.invite}
             </p>
-
-            {name && (
-              <div className="bg-white/80 backdrop-blur-sm border border-stone-200 px-8 py-6 shadow-sm mb-12 max-w-md w-full">
-                <p className="font-serif text-stone-500 text-sm tracking-widest uppercase mb-2">
-                  {t.hero.dear}
-                </p>
-                <p className="font-cursive text-4xl text-stone-800">
-                  {name}
-                </p>
-              </div>
-            )}
 
             <div className="flex flex-col sm:flex-row gap-8 text-stone-600 font-serif text-base md:text-lg tracking-[0.12em] uppercase">
               <div className="flex items-center gap-2">
@@ -185,7 +237,7 @@ export function MainApp({ name, lang }: { name: string; lang: Language }) {
               </div>
               <div className="flex items-center gap-2">
                 <MapPin size={18} />
-                <span className="font-cursive text-2xl md:text-3xl tracking-normal normal-case text-stone-700">
+                <span className="font-serif italic text-2xl md:text-3xl tracking-normal normal-case text-stone-700">
                   Georgia
                 </span>
               </div>
@@ -193,9 +245,9 @@ export function MainApp({ name, lang }: { name: string; lang: Language }) {
           </motion.div>
         </div>
 
-        {/* 3D Balcony Overlay */}
+        {/* 3D Balcony Overlay — mobile: nearly full viewport (30px top, 20px bottom); desktop: full bleed */}
         <motion.div
-          className={`absolute inset-0 z-10 ${isEnded ? "pointer-events-none" : "cursor-pointer bg-black"}`}
+          className={`absolute left-0 right-0 top-[30px] bottom-[20px] z-10 md:inset-0 ${isEnded ? "pointer-events-none" : "cursor-pointer bg-black"}`}
           animate={{ opacity: isEnded ? 0 : 1 }}
           transition={{ duration: 0.5 }}
           onClick={!isOpen ? handleOpen : undefined}
@@ -257,28 +309,49 @@ export function MainApp({ name, lang }: { name: string; lang: Language }) {
                 const isLast = index === t.timetable.items.length - 1;
                 const isRight = index % 2 === 1;
 
+                const iconCircle = (
+                  <div className="shrink-0 w-[50px] h-[50px] rounded-full bg-white border border-stone-200 shadow-sm flex items-center justify-center md:mb-6 group-hover:scale-110 transition-transform duration-300">
+                    <Icon size={20} style={{ color: '#4A5B45' }} />
+                  </div>
+                );
+
                 return (
                   <div key={index} className="relative z-10 w-full md:w-1/4 group">
                     <div
                       className={`flex items-center w-full gap-3 md:gap-0 max-w-[360px] md:max-w-none md:flex-col ${isRight ? "flex-row-reverse md:flex-col ml-auto" : "flex-row md:flex-col mr-auto"}`}
                     >
-                      <div
-                        className="shrink-0 w-16 text-center py-1.5 rounded-full text-white font-serif text-sm shadow-sm md:mb-6"
-                        style={{ backgroundColor: '#4A5B45' }}
-                      >
-                        {item.time}
-                      </div>
-
-                      <div className="flex min-w-0 flex-1 flex-row items-center gap-1 md:max-w-[200px] md:flex-none md:flex-col md:gap-0">
-                        <div className="shrink-0 w-[50px] h-[50px] rounded-full bg-white border border-stone-200 shadow-sm flex items-center justify-center md:mb-6 group-hover:scale-110 transition-transform duration-300">
-                          <Icon size={20} style={{ color: '#4A5B45' }} />
-                        </div>
-
-                        <div className={`min-w-0 flex-1 md:flex-none md:text-center ${isRight ? "text-right md:text-center" : "text-left md:text-center"}`}>
-                          <h3 className="font-serif text-lg text-stone-800 mb-1">{item.title}</h3>
-                          <p className="font-sans text-stone-500 text-xs leading-relaxed">{item.desc}</p>
-                        </div>
-                      </div>
+                      {isRight ? (
+                        <>
+                          {/* Mobile row-reverse + order: visual [text][time][icon]; md: column time → icon → text */}
+                          <div
+                            className="shrink-0 w-16 text-center py-1.5 rounded-full text-white font-serif text-sm shadow-sm md:mb-6 order-1 md:order-none"
+                            style={{ backgroundColor: '#4A5B45' }}
+                          >
+                            {item.time}
+                          </div>
+                          <div className="order-0 md:order-1">{iconCircle}</div>
+                          <div className="min-w-0 flex-1 md:flex-none md:max-w-[200px] md:text-center text-right order-2 md:order-2">
+                            <h3 className="font-serif text-lg text-stone-800 mb-1">{item.title}</h3>
+                            <p className="font-sans text-stone-500 text-xs leading-relaxed">{item.desc}</p>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div
+                            className="shrink-0 w-16 text-center py-1.5 rounded-full text-white font-serif text-sm shadow-sm md:mb-6"
+                            style={{ backgroundColor: '#4A5B45' }}
+                          >
+                            {item.time}
+                          </div>
+                          <div className="flex min-w-0 flex-1 flex-row items-center gap-1 md:max-w-[200px] md:flex-none md:flex-col md:gap-0">
+                            {iconCircle}
+                            <div className="min-w-0 flex-1 md:flex-none md:text-center text-left md:text-center">
+                              <h3 className="font-serif text-lg text-stone-800 mb-1">{item.title}</h3>
+                              <p className="font-sans text-stone-500 text-xs leading-relaxed">{item.desc}</p>
+                            </div>
+                          </div>
+                        </>
+                      )}
                     </div>
 
                     {/* Mobile only: zig-zag curve + grapes (single kvevri overlay below) */}
@@ -348,7 +421,7 @@ export function MainApp({ name, lang }: { name: string; lang: Language }) {
           className="relative overflow-hidden py-24 px-4 w-full border-t border-stone-200"
           style={{ backgroundColor: "#F3EFE7" }}
         >
-          <SectionGrapeDecor />
+          <SectionGrapeDecor showMobileCorners />
           <div className="max-w-4xl mx-auto flex flex-col items-center text-center relative z-10">
             <h2 className="font-serif text-4xl md:text-5xl text-stone-800 mb-4">
               {t.location.title}

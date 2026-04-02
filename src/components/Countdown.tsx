@@ -43,7 +43,7 @@ export function Countdown({ lang }: { lang: Language }) {
         width={150}
         height={194}
         unoptimized
-        className="absolute -left-6 -top-6 w-[min(24vw,150px)] h-auto opacity-[0.2] rotate-[-12deg] pointer-events-none hidden md:block"
+        className="absolute -left-6 -top-6 w-[min(28vw,120px)] sm:w-[min(24vw,150px)] h-auto opacity-[0.18] sm:opacity-[0.2] rotate-[-12deg] pointer-events-none"
         aria-hidden
       />
       <Image
@@ -52,7 +52,7 @@ export function Countdown({ lang }: { lang: Language }) {
         width={150}
         height={194}
         unoptimized
-        className="absolute -right-6 -top-6 w-[min(24vw,150px)] h-auto opacity-[0.2] rotate-[12deg] scale-x-[-1] pointer-events-none hidden md:block"
+        className="absolute -right-6 -top-6 w-[min(28vw,120px)] sm:w-[min(24vw,150px)] h-auto opacity-[0.18] sm:opacity-[0.2] rotate-[12deg] scale-x-[-1] pointer-events-none"
         aria-hidden
       />
       <h2 className="relative z-10 font-serif italic text-4xl sm:text-5xl mb-3 text-white text-center">{t.title}</h2>

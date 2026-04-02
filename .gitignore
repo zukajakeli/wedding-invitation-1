@@ -20,6 +20,10 @@
 # production
 /build
 
+# local tooling (GIF background script)
+/.venv-gif/
+/scripts/gizgizi-opaque-original.gif
+
 # misc
 .DS_Store
 *.pem

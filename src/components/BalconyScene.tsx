@@ -98,7 +98,8 @@ const BALCONY_LIFT_Y_PORTRAIT_EXTRA = 0.24;
 
 /** 0 = top of viewport, 1 = bottom. */
 const BALCONY_VERTICAL_ANCHOR_FROM_TOP_DESKTOP = 1 / 3;
-const BALCONY_VERTICAL_ANCHOR_FROM_TOP_MOBILE = 0.5;
+/** Lower = anchor toward top of viewport → balcony reads higher on phones. */
+const BALCONY_VERTICAL_ANCHOR_FROM_TOP_MOBILE = 0.42;
 
 /** World-space Y offset so the balcony sits higher in the frame; portrait gets extra lift. */
 function balconyLiftY(aspect: number) {
@@ -108,12 +109,11 @@ function balconyLiftY(aspect: number) {
 }
 
 function closedCameraZ(aspect: number) {
-  // Portrait: pull camera back a bit so the model feels less tight on phones.
-  return aspect < 1 ? 2.48 : 2.75;
+  return aspect < 1 ? 2.12 : 2.75;
 }
 
 function cameraFovDeg(aspect: number) {
-  return aspect < 1 ? 49 : 38;
+  return aspect < 1 ? 43 : 38;
 }
 
 function verticalAnchorFromTop(aspect: number) {
@@ -192,7 +192,7 @@ function CameraRig({ isOpen, controlsRef }: { isOpen: boolean, controlsRef: Reac
 function ScaledBalconyModel({ isOpen }: { isOpen: boolean }) {
   const { viewport } = useThree();
   const aspect = viewport.width / viewport.height;
-  const scale = aspect < 1 ? 1.32 : 1.2;
+  const scale = aspect < 1 ? 1.44 : 1.2;
   const liftY = balconyLiftY(aspect);
 
   return (

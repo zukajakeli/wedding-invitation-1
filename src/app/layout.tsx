@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Playfair_Display, Great_Vibes, Alex_Brush, Parisienne } from "next/font/google";
+import { Playfair_Display, Great_Vibes, Alex_Brush, Parisienne, Caveat } from "next/font/google";
 import "./globals.css";
 
 const playfair = Playfair_Display({
@@ -25,6 +25,11 @@ const parisienne = Parisienne({
   subsets: ["latin"],
 });
 
+const caveat = Caveat({
+  subsets: ["latin"],
+  variable: "--font-caveat",
+});
+
 export const metadata: Metadata = {
   title: "Wedding Invitation",
   description: "You are invited to our wedding",
@@ -36,7 +41,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${playfair.variable} ${greatVibes.variable} ${alexBrush.variable} ${parisienne.variable} h-full antialiased`}>
+    <html lang="en" className={`${playfair.variable} ${greatVibes.variable} ${alexBrush.variable} ${parisienne.variable} ${caveat.variable} h-full antialiased`}>
       <body className="min-h-full h-full flex flex-col font-serif overflow-hidden bg-stone-50 text-stone-900">
         {children}
       </body>
