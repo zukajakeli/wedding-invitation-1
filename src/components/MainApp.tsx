@@ -26,7 +26,7 @@ function LoadingOverlay() {
               Levan & Anni
             </h1>
             <div className="w-32 h-[1px] bg-stone-300 relative overflow-hidden">
-              <motion.div 
+              <motion.div
                 className="absolute inset-y-0 left-0 bg-stone-800 transition-all duration-300 ease-out"
                 style={{ width: `${progress}%` }}
               />
@@ -58,7 +58,7 @@ export function MainApp({ name, lang }: { name: string; lang: Language }) {
     } else {
       document.body.style.overflow = "auto";
     }
-    
+
     return () => {
       document.body.style.overflow = "auto";
     };
@@ -67,7 +67,7 @@ export function MainApp({ name, lang }: { name: string; lang: Language }) {
   const handleOpen = () => {
     if (isOpen) return;
     setIsOpen(true);
-    
+
     if (audioRef.current) {
       audioRef.current.volume = 0.5;
       audioRef.current.play().catch(err => console.log("Audio autoplay failed:", err));
@@ -93,7 +93,7 @@ export function MainApp({ name, lang }: { name: string; lang: Language }) {
 
   return (
     <div className="relative min-h-screen bg-stone-50 w-full overflow-x-hidden">
-      
+
       <LoadingOverlay />
 
       <audio ref={audioRef} loop>
@@ -113,9 +113,8 @@ export function MainApp({ name, lang }: { name: string; lang: Language }) {
             <button
               key={l}
               onClick={() => switchLanguage(l)}
-              className={`text-xs font-serif uppercase px-1.5 transition-colors ${
-                lang === l ? "text-stone-900 font-bold scale-110" : "text-stone-400 hover:text-stone-600"
-              }`}
+              className={`text-xs font-serif uppercase px-1.5 transition-colors ${lang === l ? "text-stone-900 font-bold scale-110" : "text-stone-400 hover:text-stone-600"
+                }`}
             >
               {l}
             </button>
@@ -131,7 +130,7 @@ export function MainApp({ name, lang }: { name: string; lang: Language }) {
 
       {/* TOP SECTION: Balcony + Invitation Behind It */}
       <div className="relative w-full h-[100svh] overflow-hidden bg-stone-100 flex flex-col items-center justify-center">
-        
+
         {/* Background Content (Invitation) */}
         <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4 pt-20 w-full max-w-4xl mx-auto z-0">
           <motion.div
@@ -144,7 +143,7 @@ export function MainApp({ name, lang }: { name: string; lang: Language }) {
               Levan & Anni
             </h1>
             <div className="w-16 h-px bg-stone-300 mb-8" />
-            
+
             <p className="font-serif text-lg md:text-2xl text-stone-600 leading-relaxed max-w-lg whitespace-pre-line mb-12">
               {t.hero.invite}
             </p>
@@ -159,7 +158,7 @@ export function MainApp({ name, lang }: { name: string; lang: Language }) {
                 </p>
               </div>
             )}
-            
+
             <div className="flex flex-col sm:flex-row gap-8 text-stone-500 font-serif text-sm tracking-widest uppercase">
               <div className="flex items-center gap-2">
                 <CalendarDays size={18} />
@@ -174,7 +173,7 @@ export function MainApp({ name, lang }: { name: string; lang: Language }) {
         </div>
 
         {/* 3D Balcony Overlay */}
-        <motion.div 
+        <motion.div
           className={`absolute inset-0 z-10 ${isEnded ? "pointer-events-none" : "cursor-pointer bg-black"}`}
           animate={{ opacity: isEnded ? 0 : 1 }}
           transition={{ duration: 0.5 }}
@@ -210,32 +209,32 @@ export function MainApp({ name, lang }: { name: string; lang: Language }) {
             <p className="font-serif text-sm text-stone-500 mb-16 text-center tracking-wide uppercase">
               {t.timetable.subtitle}
             </p>
-            
+
             {/* Main timeline container */}
             <div className="relative flex flex-col md:flex-row w-full justify-between items-start md:items-stretch px-4 md:px-0">
-              
+
               {/* The continuous line (horizontal on desktop, vertical on mobile) */}
               <div className="absolute left-[41px] top-8 bottom-12 w-[2px] md:w-auto md:h-[2px] md:left-12 md:right-12 md:top-[85px] bg-stone-300 z-0" />
-              
+
               {/* The elegant vine background (desktop only) */}
               <div className="hidden md:block absolute left-1/2 top-[20px] -translate-x-1/2 w-full max-w-4xl h-[150px] opacity-10 pointer-events-none z-0"
-                  style={{ 
-                    backgroundImage: "url('/assets/vine-ornament.jpg')",
-                    backgroundSize: "contain",
-                    backgroundPosition: "center",
-                    backgroundRepeat: "repeat-x"
-                  }}
+                style={{
+                  backgroundImage: "url('/assets/vine-ornament.jpg')",
+                  backgroundSize: "contain",
+                  backgroundPosition: "center",
+                  backgroundRepeat: "repeat-x"
+                }}
               />
 
               {t.timetable.items.map((item, index) => {
                 const icons = [Church, Wine, Heart, Utensils];
                 const Icon = icons[index % icons.length];
-                
+
                 return (
                   <div key={index} className="relative flex md:flex-col items-start md:items-center w-full md:w-1/4 mb-12 md:mb-0 z-10 group">
-                    
+
                     {/* Time Badge (Desktop: Top, Mobile: Left over the line) */}
-                    <div 
+                    <div
                       className="absolute md:relative left-[9px] top-[40px] md:left-auto md:top-auto w-16 text-center py-1.5 rounded-full text-white font-serif text-sm md:mb-6 shadow-sm z-20"
                       style={{ backgroundColor: '#4A5B45' }}
                     >
@@ -252,7 +251,7 @@ export function MainApp({ name, lang }: { name: string; lang: Language }) {
                       <h3 className="font-serif text-lg text-stone-800 mb-1">{item.title}</h3>
                       <p className="font-sans text-stone-500 text-xs leading-relaxed">{item.desc}</p>
                     </div>
-                    
+
                   </div>
                 )
               })}
@@ -283,10 +282,10 @@ export function MainApp({ name, lang }: { name: string; lang: Language }) {
           <p className="font-serif text-stone-600 mb-12">
             {t.location.desc}
           </p>
-          
+
           <Map />
 
-          <a 
+          <a
             href="https://maps.apple.com/?q=41.7151,44.8271"
             className="mt-10 inline-flex items-center gap-2 bg-stone-800 text-white px-8 py-4 rounded-full font-serif uppercase tracking-widest text-sm hover:bg-stone-700 transition-colors"
           >
@@ -294,7 +293,7 @@ export function MainApp({ name, lang }: { name: string; lang: Language }) {
             {t.location.btn}
           </a>
         </section>
-        
+
       </div>
     </div>
   );
