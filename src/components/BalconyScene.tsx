@@ -1,9 +1,8 @@
 "use client";
 
 import { useRef, useEffect, useState } from "react";
-import { Canvas } from "@react-three/fiber";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useGLTF, Environment, Center, OrbitControls } from "@react-three/drei";
-import { useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import gsap from "gsap";
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
@@ -57,7 +56,7 @@ export function BalconyModel({ isOpen, ...props }: any) {
         receiveShadow
       />
 
-      {/* Sky / backdrop mesh from GLB (Blender object name: Plane) */}
+      {/* Sky / backdrop mesh from GLB (always visible; DOM/photo backdrops still swap on camera depth). */}
       {nodes.Plane && (
         <primitive
           object={nodes.Plane}
@@ -133,6 +132,43 @@ function composeShiftY(aspect: number) {
   const anchor = verticalAnchorFromTop(aspect);
   // Screen center = 0.5 from top; shift subject by (anchor - 0.5) in viewport fractions → world offset at depth z
   return (anchor - 0.5) * 2 * halfViewportWorld;
+}
+
+/**
+ * How far along the exterior → interior camera move (closedZ → -1.5) before we swap DOM photo + scene clear (not the GLB Plane).
+ */
+const INTERIOR_BACKDROP_T = 0.5;
+
+function CameraInteriorSync({
+  isOpen,
+  onCameraInteriorChange,
+}: {
+  isOpen: boolean;
+  onCameraInteriorChange: (inside: boolean) => void;
+}) {
+  const { camera, viewport } = useThree();
+  const prev = useRef<boolean | null>(null);
+
+  useFrame(() => {
+    if (!isOpen) {
+      if (prev.current !== false) {
+        prev.current = false;
+        onCameraInteriorChange(false);
+      }
+      return;
+    }
+    const aspect = viewport.width / viewport.height;
+    const closedZ = closedCameraZ(aspect);
+    const insideZ = -1.5;
+    const threshold = closedZ + INTERIOR_BACKDROP_T * (insideZ - closedZ);
+    const inside = camera.position.z <= threshold;
+    if (prev.current !== inside) {
+      prev.current = inside;
+      onCameraInteriorChange(inside);
+    }
+  });
+
+  return null;
 }
 
 function CameraRig({ isOpen, controlsRef }: { isOpen: boolean, controlsRef: React.RefObject<OrbitControlsImpl | null> }) {
@@ -232,9 +268,14 @@ function BalconyOrbitControls({
 
 export function BalconyScene({
   isOpen,
+  cameraInside,
+  onCameraInteriorChange,
   pointerEventsEnabled = true,
 }: {
   isOpen: boolean;
+  /** True once the camera has crossed into the interior (depth threshold); drives sky + backdrops. */
+  cameraInside: boolean;
+  onCameraInteriorChange: (inside: boolean) => void;
   /** When false, touches pass through to the page (needed after hero fade on mobile). */
   pointerEventsEnabled?: boolean;
 }) {
@@ -251,15 +292,18 @@ export function BalconyScene({
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  const exteriorBackdropStyle = {
+    backgroundImage:
+      "radial-gradient(circle at center, rgba(0,0,0,0.1) 20%, rgba(0,0,0,0.85) 100%), url('/mtkvari.jpg')",
+    backgroundSize: "100% 100%, cover" as const,
+    backgroundRepeat: "no-repeat, no-repeat" as const,
+    backgroundPosition: "center, center" as const,
+  };
+
   return (
     <div
       className={`balcony-scene absolute inset-0 z-0 min-h-0 min-w-0 w-full h-full bg-[#1a1818] ${pointerEventsEnabled ? "pointer-events-auto" : "pointer-events-none"}`}
-      style={{
-        backgroundImage: "radial-gradient(circle at center, rgba(0,0,0,0.1) 20%, rgba(0,0,0,0.85) 100%), url('/mtkvari.jpg')",
-        backgroundSize: "100% 100%, cover",
-        backgroundRepeat: "no-repeat, no-repeat",
-        backgroundPosition: "center, center"
-      }}
+      style={cameraInside ? undefined : exteriorBackdropStyle}
     >
       <Canvas
         key={isPortraitViewport ? "portrait" : "landscape"}
@@ -278,6 +322,10 @@ export function BalconyScene({
           display: "block",
         }}
       >
+        <CameraInteriorSync isOpen={isOpen} onCameraInteriorChange={onCameraInteriorChange} />
+
+        {cameraInside ? <color attach="background" args={["#1a1818"]} /> : null}
+
         <ambientLight intensity={1.2} />
         <directionalLight position={[5, 10, 5]} intensity={1.5} castShadow />
         <Environment preset="city" />

@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Playfair_Display, Great_Vibes, Alex_Brush, Parisienne, Caveat } from "next/font/google";
 import "./globals.css";
 
@@ -33,6 +33,13 @@ const caveat = Caveat({
 export const metadata: Metadata = {
   title: "Wedding Invitation",
   description: "You are invited to our wedding",
+};
+
+/** Lets `env(safe-area-inset-*)` reflect notches / home indicator; avoids iOS letterboxing vs real screen. */
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({

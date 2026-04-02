@@ -66,6 +66,7 @@ export function MainApp({ name, lang }: { name: string; lang: Language }) {
   const searchParams = useSearchParams();
 
   const [isOpen, setIsOpen] = useState(false);
+  const [balconyCameraInside, setBalconyCameraInside] = useState(false);
   const [isEnded, setIsEnded] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -85,6 +86,9 @@ export function MainApp({ name, lang }: { name: string; lang: Language }) {
       document.body.style.overflow = "auto";
     };
   }, [isEnded]);
+
+  /** Only treat as interior while the sequence is open (avoids stale flag if `isOpen` ever resets). */
+  const balconyInteriorActive = isOpen && balconyCameraInside;
 
   const handleOpen = () => {
     if (isOpen) return;
@@ -127,7 +131,7 @@ export function MainApp({ name, lang }: { name: string; lang: Language }) {
         initial={{ opacity: 0 }}
         animate={{ opacity: isOpen ? 1 : 0 }}
         transition={{ delay: 1 }}
-        className="fixed top-4 right-4 z-40 flex items-center gap-2"
+        className="fixed z-40 flex items-center gap-2 top-[max(1rem,env(safe-area-inset-top,0px))] right-[max(1rem,env(safe-area-inset-right,0px))]"
       >
         <div className="bg-white/80 backdrop-blur-sm px-3 py-2 rounded-full shadow-md flex items-center gap-2 border border-stone-200">
           <Globe size={16} className="text-stone-400 mr-1" />
@@ -150,13 +154,26 @@ export function MainApp({ name, lang }: { name: string; lang: Language }) {
         </button>
       </motion.div>
 
-      {/* TOP SECTION: Balcony + Invitation Behind It */}
-      <div className="relative w-full hero-viewport-height overflow-hidden flex flex-col items-center justify-center">
+      {/* Intro: fixed + spacer so one full screen always covers the device (iOS safe area / vh quirks). After open, normal flow. */}
+      {!isEnded ? (
+        <div className="hero-viewport-height shrink-0" aria-hidden />
+      ) : null}
+      <div
+        className={
+          isEnded
+            ? "relative w-full hero-viewport-height overflow-hidden flex flex-col items-center justify-center"
+            : "fixed inset-0 z-[25] w-full overflow-hidden flex flex-col items-center justify-center"
+        }
+      >
 
-        {/* Full-bleed balcony backdrop (mobile gutters, WebGL load, etc.) */}
+        {/* Full-bleed balcony backdrop — same mtkvari as scene; must go solid when camera is inside or it shows through transparent WebGL (reads as “brick”). */}
         <div
           className="absolute inset-0 z-0"
-          style={balconyHeroBackdropStyle}
+          style={
+            balconyInteriorActive
+              ? { backgroundColor: "#1a1818", backgroundImage: "none" }
+              : balconyHeroBackdropStyle
+          }
           aria-hidden
         />
 
@@ -252,7 +269,12 @@ export function MainApp({ name, lang }: { name: string; lang: Language }) {
           transition={{ duration: 0.5 }}
           onClick={!isOpen ? handleOpen : undefined}
         >
-          <BalconyScene isOpen={isOpen} pointerEventsEnabled={!isEnded} />
+          <BalconyScene
+            isOpen={isOpen}
+            cameraInside={balconyInteriorActive}
+            onCameraInteriorChange={setBalconyCameraInside}
+            pointerEventsEnabled={!isEnded}
+          />
 
           {/* Open Button overlay */}
           <motion.div
