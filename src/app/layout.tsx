@@ -48,8 +48,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${playfair.variable} ${greatVibes.variable} ${alexBrush.variable} ${parisienne.variable} ${caveat.variable} h-full antialiased`}>
-      <body className="min-h-full h-full flex flex-col font-serif overflow-hidden bg-stone-50 text-stone-900">
+    <html lang="en" className={`${playfair.variable} ${greatVibes.variable} ${alexBrush.variable} ${parisienne.variable} ${caveat.variable} min-h-full antialiased`}>
+      <body className="min-h-dvh flex flex-col font-serif overflow-x-hidden bg-stone-50 text-stone-900">
         {children}
       </body>
     </html>

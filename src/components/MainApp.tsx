@@ -1,13 +1,14 @@
 "use client";
 
-import { useState, useEffect, useRef, type CSSProperties } from "react";
+import { useState, useEffect, useLayoutEffect, useRef, type CSSProperties } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { translations, Language } from "@/locales/translations";
 import { Countdown } from "./Countdown";
 import { VenueMap } from "./Map";
 import Image from "next/image";
-import { MapPin, CalendarDays, Utensils, Volume2, VolumeX, Globe, Heart, Wine, Church, Clock, ExternalLink } from "lucide-react";
+import { MapPin, CalendarDays, Utensils, Volume2, VolumeX, Globe, Heart, Wine, Church, Clock, ExternalLink, ChevronDown } from "lucide-react";
 import { BalconyScene } from "./BalconyScene";
 import { RsvpForm } from "./RsvpForm";
 import { useProgress } from "@react-three/drei";
@@ -17,6 +18,31 @@ import { TimelineKvevriJourney } from "./TimelineKvevriJourney";
 
 function googleMapsUrl(lat: number, lng: number) {
   return `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+}
+
+/** Reliable full-page height (avoids under-reporting right after layout / overflow changes). */
+function getDocumentScrollHeight() {
+  if (typeof document === "undefined") return 0;
+  const body = document.body;
+  const html = document.documentElement;
+  return Math.max(
+    body.scrollHeight,
+    body.offsetHeight,
+    html.scrollHeight,
+    html.offsetHeight
+  );
+}
+
+/** Root scroll position (window vs body/html differs when `overflow` is on body). */
+function getRootScrollY() {
+  if (typeof window === "undefined") return 0;
+  const se = document.scrollingElement ?? document.documentElement;
+  return Math.max(window.scrollY, se.scrollTop, document.documentElement.scrollTop, document.body.scrollTop);
+}
+
+function scrollRootBy(delta: number) {
+  const se = document.scrollingElement ?? document.documentElement;
+  se.scrollBy({ top: delta, behavior: "smooth" });
 }
 
 /** Same as BalconyScene wrapper — full-bleed under hero so gutters / load never flash invitation cream. */
@@ -72,20 +98,68 @@ export function MainApp({ name, lang }: { name: string; lang: Language }) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const timetableRootRef = useRef<HTMLDivElement>(null);
   const timetableConnectorRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const [isAtPageBottom, setIsAtPageBottom] = useState(false);
+  const showScrollCue = isEnded && !isAtPageBottom;
   const t = translations[lang];
   const timetableConnectorCount = Math.max(0, t.timetable.items.length - 1);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!isEnded) {
       document.body.style.overflow = "hidden";
     } else {
-      document.body.style.overflow = "auto";
+      document.body.style.overflow = "";
     }
-
     return () => {
-      document.body.style.overflow = "auto";
+      document.body.style.overflow = "";
     };
   }, [isEnded]);
+
+  useEffect(() => {
+    if (!isEnded) return;
+
+    const bottomThresholdPx = 96;
+    /** Ignore “at bottom” until the page is measurably taller than the viewport (avoids false positives). */
+    const minScrollableGapPx = 80;
+    const updateAtBottom = () => {
+      const docHeight = getDocumentScrollHeight();
+      const vh = window.innerHeight;
+      const y = getRootScrollY();
+      const maxScroll = docHeight - vh;
+      const nearBottom =
+        maxScroll > minScrollableGapPx &&
+        y + vh >= docHeight - bottomThresholdPx;
+      setIsAtPageBottom((prev) => (prev === nearBottom ? prev : nearBottom));
+    };
+
+    const runAfterLayout = () => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(updateAtBottom);
+      });
+    };
+    runAfterLayout();
+
+    const ro = new ResizeObserver(() => updateAtBottom());
+    ro.observe(document.documentElement);
+    ro.observe(document.body);
+
+    window.addEventListener("scroll", updateAtBottom, { passive: true });
+    window.addEventListener("resize", updateAtBottom);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("scroll", updateAtBottom);
+      window.removeEventListener("resize", updateAtBottom);
+    };
+  }, [isEnded]);
+
+  const scrollToNextSection = () => {
+    const docHeight = getDocumentScrollHeight();
+    const y = getRootScrollY();
+    const vh = window.innerHeight;
+    const remaining = docHeight - y - vh;
+    if (remaining <= 1) return;
+    const delta = Math.min(vh * 0.85, remaining);
+    scrollRootBy(delta);
+  };
 
   /** Only treat as interior while the sequence is open (avoids stale flag if `isOpen` ever resets). */
   const balconyInteriorActive = isOpen && balconyCameraInside;
@@ -289,11 +363,33 @@ export function MainApp({ name, lang }: { name: string; lang: Language }) {
         </motion.div>
       </div>
 
+      {showScrollCue && typeof document !== "undefined"
+        ? createPortal(
+          <button
+            type="button"
+            onClick={scrollToNextSection}
+            className="fixed z-[150] flex h-12 w-12 items-center justify-center rounded-full border border-stone-300/90 bg-stone-100 text-stone-600 opacity-100 shadow-lg backdrop-blur-sm transition-colors hover:border-stone-400 hover:bg-stone-50 hover:text-stone-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-stone-400 focus-visible:ring-offset-2"
+            style={{
+              bottom: "max(1rem, env(safe-area-inset-bottom, 0px))",
+              right: "max(1rem, env(safe-area-inset-right, 0px))",
+            }}
+            aria-label={t.hero.scrollDown}
+          >
+            <span className="flex motion-safe:animate-bounce" aria-hidden>
+              <ChevronDown size={26} strokeWidth={2} />
+            </span>
+          </button>,
+          document.body
+        )
+        : null}
+
       {/* REST OF THE LANDING PAGE */}
       <div className="flex flex-col items-center w-full z-20 relative bg-stone-50">
 
         {/* Countdown Section */}
-        <Countdown lang={lang} />
+        <div id="countdown-section" className="w-full scroll-mt-0">
+          <Countdown lang={lang} />
+        </div>
 
         {/* Timetable Section */}
         <section className="relative overflow-hidden py-24 px-4 w-full flex flex-col items-center" style={{ backgroundColor: '#F3EFE7' }}>

@@ -6,6 +6,7 @@ export const translations = {
       invite: "გიწვევთ\nლევანისა და ანნის\nბედნიერების გასაზიარებლად",
       dear: "ძვირფასო",
       country: "საქართველო",
+      scrollDown: "შემდეგ სექციაზე გადასვლა",
     },
     countdown: {
       title: "დრო ქორწილამდე",
@@ -72,6 +73,7 @@ export const translations = {
       invite: "We invite you\nto share the happiness of\nLevani and Anni",
       dear: "Dear",
       country: "Georgia",
+      scrollDown: "Scroll to the next section",
     },
     countdown: {
       title: "Time until wedding",
@@ -138,6 +140,7 @@ export const translations = {
       invite: "Приглашаем вас\nразделить счастье\nЛевани и Анни",
       dear: "Дорогой(ая)",
       country: "Грузия",
+      scrollDown: "Перейти к следующему разделу",
     },
     countdown: {
       title: "До свадьбы осталось",
@@ -204,6 +207,7 @@ export const translations = {
       invite: "Nous vous invitons\nà partager le bonheur de\nLevani et Anni",
       dear: "Cher(e)",
       country: "Géorgie",
+      scrollDown: "Aller à la section suivante",
     },
     countdown: {
       title: "Temps avant le mariage",
