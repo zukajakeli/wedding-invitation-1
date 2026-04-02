@@ -136,12 +136,19 @@ function CameraRig({ isOpen, controlsRef }: { isOpen: boolean, controlsRef: Reac
   return null;
 }
 
-export function BalconyScene({ isOpen }: { isOpen: boolean }) {
+export function BalconyScene({
+  isOpen,
+  pointerEventsEnabled = true,
+}: {
+  isOpen: boolean;
+  /** When false, touches pass through to the page (needed after hero fade on mobile). */
+  pointerEventsEnabled?: boolean;
+}) {
   const controlsRef = useRef<OrbitControlsImpl>(null);
 
   return (
     <div
-      className="absolute inset-0 z-0 pointer-events-auto bg-[#1a1818]"
+      className={`absolute inset-0 z-0 bg-[#1a1818] ${pointerEventsEnabled ? "pointer-events-auto" : "pointer-events-none"}`}
       style={{
         backgroundImage: "radial-gradient(circle at center, rgba(0,0,0,0.1) 20%, rgba(0,0,0,0.85) 100%), url('/brown brick.jpeg')",
         backgroundSize: "100% 100%, 400px", // Gradient covers full element, brick repeats
@@ -149,7 +156,15 @@ export function BalconyScene({ isOpen }: { isOpen: boolean }) {
         backgroundPosition: "center, center"
       }}
     >
-      <Canvas shadows camera={{ position: [0, 0, 1.8], fov: 35 }} gl={{ alpha: true }}>
+      <Canvas
+        shadows
+        camera={{ position: [0, 0, 1.8], fov: 35 }}
+        gl={{ alpha: true }}
+        style={{
+          pointerEvents: pointerEventsEnabled ? "auto" : "none",
+          touchAction: pointerEventsEnabled ? "none" : "auto",
+        }}
+      >
         <ambientLight intensity={1.2} />
         <directionalLight position={[5, 10, 5]} intensity={1.5} castShadow />
         <Environment preset="city" />
@@ -163,6 +178,7 @@ export function BalconyScene({ isOpen }: { isOpen: boolean }) {
 
         <OrbitControls
           ref={controlsRef}
+          enabled={pointerEventsEnabled}
           enableZoom={false}
           enablePan={false}
           minPolarAngle={Math.PI / 2.5}

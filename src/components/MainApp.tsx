@@ -5,10 +5,17 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { translations, Language } from "@/locales/translations";
 import { Countdown } from "./Countdown";
-import { Map } from "./Map";
-import { MapPin, CalendarDays, Utensils, Shirt, Volume2, VolumeX, Globe, Heart, Wine, Church } from "lucide-react";
+import { VenueMap } from "./Map";
+import Image from "next/image";
+import { MapPin, CalendarDays, Utensils, Volume2, VolumeX, Globe, Heart, Wine, Church, Clock, ExternalLink } from "lucide-react";
+
+function appleMapsUrl(lat: number, lng: number, label: string) {
+  return `https://maps.apple.com/?ll=${lat},${lng}&q=${encodeURIComponent(label)}`;
+}
 import { BalconyScene } from "./BalconyScene";
+import { RsvpForm } from "./RsvpForm";
 import { useProgress } from "@react-three/drei";
+import { HeroGrapeDecor, SectionGrapeDecor, MaskedGrapes } from "./GrapeDecorations";
 
 function LoadingOverlay() {
   const { progress } = useProgress();
@@ -131,8 +138,13 @@ export function MainApp({ name, lang }: { name: string; lang: Language }) {
       {/* TOP SECTION: Balcony + Invitation Behind It */}
       <div className="relative w-full h-[100svh] overflow-hidden bg-stone-100 flex flex-col items-center justify-center">
 
+        {/* Full-bleed grape ornaments (behind invitation copy) */}
+        <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+          <HeroGrapeDecor />
+        </div>
+
         {/* Background Content (Invitation) */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4 pt-20 w-full max-w-4xl mx-auto z-0">
+        <div className="absolute inset-0 z-[1] flex flex-col items-center justify-center text-center px-4 pt-20 w-full max-w-4xl mx-auto">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: isEnded ? 1 : 0, scale: isEnded ? 1 : 0.95 }}
@@ -179,7 +191,7 @@ export function MainApp({ name, lang }: { name: string; lang: Language }) {
           transition={{ duration: 0.5 }}
           onClick={!isOpen ? handleOpen : undefined}
         >
-          <BalconyScene isOpen={isOpen} />
+          <BalconyScene isOpen={isOpen} pointerEventsEnabled={!isEnded} />
 
           {/* Open Button overlay */}
           <motion.div
@@ -201,8 +213,9 @@ export function MainApp({ name, lang }: { name: string; lang: Language }) {
         <Countdown lang={lang} />
 
         {/* Timetable Section */}
-        <section className="py-24 px-4 w-full flex flex-col items-center" style={{ backgroundColor: '#F3EFE7' }}>
-          <div className="w-full max-w-6xl mx-auto flex flex-col items-center">
+        <section className="relative overflow-hidden py-24 px-4 w-full flex flex-col items-center" style={{ backgroundColor: '#F3EFE7' }}>
+          <SectionGrapeDecor />
+          <div className="w-full max-w-6xl mx-auto flex flex-col items-center relative z-10">
             <h2 className="font-serif italic text-4xl sm:text-5xl text-center mb-2" style={{ color: '#4A5B45' }}>
               {t.timetable.title}
             </h2>
@@ -211,10 +224,10 @@ export function MainApp({ name, lang }: { name: string; lang: Language }) {
             </p>
 
             {/* Main timeline container */}
-            <div className="relative flex flex-col md:flex-row w-full justify-between items-start md:items-stretch px-4 md:px-0">
+            <div className="relative flex flex-col md:flex-row w-full justify-between items-stretch px-4 md:px-0">
 
-              {/* The continuous line (horizontal on desktop, vertical on mobile) */}
-              <div className="absolute left-[41px] top-8 bottom-12 w-[2px] md:w-auto md:h-[2px] md:left-12 md:right-12 md:top-[85px] bg-stone-300 z-0" />
+              {/* Desktop: horizontal connector */}
+              <div className="hidden md:block absolute left-12 right-12 top-[85px] h-[2px] bg-stone-300 z-0" />
 
               {/* The elegant vine background (desktop only) */}
               <div className="hidden md:block absolute left-1/2 top-[20px] -translate-x-1/2 w-full max-w-4xl h-[150px] opacity-10 pointer-events-none z-0"
@@ -229,69 +242,220 @@ export function MainApp({ name, lang }: { name: string; lang: Language }) {
               {t.timetable.items.map((item, index) => {
                 const icons = [Church, Wine, Heart, Utensils];
                 const Icon = icons[index % icons.length];
+                const isLast = index === t.timetable.items.length - 1;
 
                 return (
-                  <div key={index} className="relative flex md:flex-col items-start md:items-center w-full md:w-1/4 mb-12 md:mb-0 z-10 group">
+                  <div key={index} className="relative z-10 w-full md:w-1/4 group">
+                    <div className="flex flex-row md:flex-col items-center w-full gap-3 md:gap-0">
+                      <div
+                        className="shrink-0 w-16 text-center py-1.5 rounded-full text-white font-serif text-sm shadow-sm md:mb-6"
+                        style={{ backgroundColor: '#4A5B45' }}
+                      >
+                        {item.time}
+                      </div>
 
-                    {/* Time Badge (Desktop: Top, Mobile: Left over the line) */}
-                    <div
-                      className="absolute md:relative left-[9px] top-[40px] md:left-auto md:top-auto w-16 text-center py-1.5 rounded-full text-white font-serif text-sm md:mb-6 shadow-sm z-20"
-                      style={{ backgroundColor: '#4A5B45' }}
-                    >
-                      {item.time}
+                      <div className="shrink-0 w-[50px] h-[50px] rounded-full bg-white border border-stone-200 shadow-sm flex items-center justify-center md:mb-6 group-hover:scale-110 transition-transform duration-300">
+                        <Icon size={20} style={{ color: '#4A5B45' }} />
+                      </div>
+
+                      <div className="min-w-0 flex-1 md:flex-none md:text-center md:max-w-[200px]">
+                        <h3 className="font-serif text-lg text-stone-800 mb-1">{item.title}</h3>
+                        <p className="font-sans text-stone-500 text-xs leading-relaxed">{item.desc}</p>
+                      </div>
                     </div>
 
-                    {/* Icon Node (Desktop: Middle, Mobile: Right of line) */}
-                    <div className="w-[50px] h-[50px] rounded-full bg-white border border-stone-200 shadow-sm flex items-center justify-center shrink-0 ml-[80px] md:ml-0 md:mb-6 group-hover:scale-110 transition-transform duration-300 z-10">
-                      <Icon size={20} style={{ color: '#4A5B45' }} />
-                    </div>
-
-                    {/* Text Content */}
-                    <div className="ml-6 md:ml-0 md:text-center mt-2 md:mt-0 max-w-[200px]">
-                      <h3 className="font-serif text-lg text-stone-800 mb-1">{item.title}</h3>
-                      <p className="font-sans text-stone-500 text-xs leading-relaxed">{item.desc}</p>
-                    </div>
-
+                    {/* Mobile only: grape connector in the gap between slots (not over pills) */}
+                    {!isLast ? (
+                      <div
+                        className="md:hidden flex flex-row items-center justify-start gap-3 pointer-events-none py-3"
+                        aria-hidden
+                      >
+                        <div className="w-16 shrink-0 flex justify-center items-center">
+                          {index % 2 === 0 ? (
+                            <MaskedGrapes className="w-10 h-12 opacity-[0.32]" />
+                          ) : (
+                            <Image
+                              src="/assets/grape-cluster.svg"
+                              alt=""
+                              width={40}
+                              height={52}
+                              unoptimized
+                              className="w-9 h-auto opacity-[0.22] rotate-[-12deg]"
+                              aria-hidden
+                            />
+                          )}
+                        </div>
+                        <div className="w-[50px] shrink-0" />
+                        <div className="flex-1 min-w-0" />
+                      </div>
+                    ) : null}
                   </div>
-                )
+                );
               })}
             </div>
           </div>
         </section>
 
         {/* Dresscode Section */}
-        <section className="py-24 px-4 w-full bg-stone-100 border-t border-stone-200 text-center">
-          <div className="max-w-2xl mx-auto flex flex-col items-center">
-            <div className="w-16 h-16 rounded-full bg-white border border-stone-200 flex items-center justify-center mb-6 text-stone-400">
-              <Shirt size={28} />
-            </div>
-            <h2 className="font-cursive text-5xl text-stone-800 mb-6">
+        <section
+          className="relative overflow-hidden py-20 md:py-28 px-4 w-full text-center border-t border-[#e8e4db]"
+          style={{ backgroundColor: "#F5F2EA" }}
+        >
+          <MaskedGrapes className="absolute -left-[6%] top-12 w-[min(30vw,220px)] h-[min(24vw,180px)] opacity-[0.1] -rotate-[4deg] pointer-events-none hidden md:block" />
+          <Image
+            src="/assets/grape-cluster.svg"
+            alt=""
+            width={160}
+            height={207}
+            unoptimized
+            className="absolute -right-4 top-1/3 w-[min(24vw,160px)] h-auto opacity-[0.12] rotate-[10deg] pointer-events-none hidden lg:block"
+            aria-hidden
+          />
+          <div className="max-w-3xl mx-auto flex flex-col items-center relative z-10">
+            <Image
+              src="/assets/dresscode-illustration1.png"
+              alt="Guests in evening formal attire"
+              width={764}
+              height={610}
+              sizes="(max-width: 768px) 100vw, 672px"
+              className="w-full max-w-lg md:max-w-xl h-auto mb-10 md:mb-14 select-none"
+            />
+            <h2
+              className="font-serif italic text-4xl sm:text-5xl md:text-[3.25rem] mb-3 md:mb-4 leading-tight"
+              style={{ color: "#3D4839" }}
+            >
               {t.dresscode.title}
             </h2>
-            <p className="font-serif text-lg text-stone-600 leading-relaxed">
+            <p
+              className="font-serif text-base sm:text-lg md:text-xl tracking-wide"
+              style={{ color: "#5a6652" }}
+            >
               {t.dresscode.desc}
             </p>
           </div>
         </section>
 
-        {/* Location / Map Section */}
-        <section className="py-24 px-4 w-full max-w-5xl mx-auto text-center flex flex-col items-center">
-          <h2 className="font-cursive text-5xl md:text-6xl text-stone-800 mb-6">
-            {t.location.title}
-          </h2>
-          <p className="font-serif text-stone-600 mb-12">
-            {t.location.desc}
-          </p>
+        {/* Locations: ceremony + main venue */}
+        <section
+          className="relative overflow-hidden py-24 px-4 w-full border-t border-stone-200"
+          style={{ backgroundColor: "#F3EFE7" }}
+        >
+          <SectionGrapeDecor />
+          <div className="max-w-4xl mx-auto flex flex-col items-center text-center relative z-10">
+            <h2 className="font-serif text-4xl md:text-5xl text-stone-800 mb-4">
+              {t.location.title}
+            </h2>
 
-          <Map />
 
-          <a
-            href="https://maps.apple.com/?q=41.7151,44.8271"
-            className="mt-10 inline-flex items-center gap-2 bg-stone-800 text-white px-8 py-4 rounded-full font-serif uppercase tracking-widest text-sm hover:bg-stone-700 transition-colors"
-          >
-            <MapPin size={16} />
-            {t.location.btn}
-          </a>
+            <article className="w-full mb-20 md:mb-28">
+              <p className="font-serif text-2xl md:text-3xl text-[#3D4839] mb-1">
+                {t.location.church.ceremonyGeo}
+              </p>
+              {t.location.church.ceremonyLabel ? (
+                <p className="font-serif text-sm md:text-base text-stone-500 mb-3">
+                  {t.location.church.ceremonyLabel}
+                </p>
+              ) : null}
+              <h3 className="font-serif text-xl md:text-2xl text-stone-800">
+                {t.location.church.venue}
+              </h3>
+              <p className="font-sans text-sm text-stone-500 mt-1 mb-6">
+                {t.location.church.vicinity}
+              </p>
+              <div className="flex items-center justify-center gap-2 text-stone-500 font-sans text-sm mb-8">
+                <Clock size={16} strokeWidth={1.5} aria-hidden />
+                <span>{t.location.church.time}</span>
+              </div>
+              <Image
+                src="/assets/location-svetitskhoveli.png"
+                alt={t.location.church.imageAlt}
+                width={1024}
+                height={568}
+                sizes="(max-width: 896px) 100vw, 896px"
+                className="w-full max-w-4xl mx-auto h-auto rounded-2xl object-cover shadow-md border border-stone-200/80 mb-4"
+              />
+              <div className="relative w-full max-w-4xl mx-auto">
+                <a
+                  href={appleMapsUrl(41.8422734, 44.7209856, t.location.church.venue)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="absolute top-3 left-3 z-[1000] inline-flex items-center gap-2 rounded-lg bg-white/95 px-3 py-2 text-xs font-serif tracking-wide text-stone-800 shadow-md backdrop-blur-sm border border-stone-200/90 hover:bg-white transition-colors"
+                >
+                  <ExternalLink size={14} aria-hidden />
+                  {t.location.btn}
+                </a>
+                <VenueMap
+                  mapContainerProps={{ id: "venue-map-church" }}
+                  position={[41.8422734, 44.7209856]}
+                  zoom={16}
+                  markerTitle={t.location.church.venue}
+                  markerSubtitle={t.location.church.vicinity}
+                />
+              </div>
+            </article>
+
+            <article className="w-full">
+              <p className="font-serif text-sm md:text-base uppercase tracking-[0.2em] text-stone-500 mb-2">
+                {t.location.villa.sectionLabel}
+              </p>
+              <h3 className="font-serif text-xl md:text-2xl text-stone-800">
+                {t.location.villa.venue}
+              </h3>
+              <p className="font-sans text-sm text-stone-500 mt-1 mb-6">
+                {t.location.villa.vicinity}
+              </p>
+              <div className="flex items-center justify-center gap-2 text-stone-500 font-sans text-sm mb-8">
+                <Clock size={16} strokeWidth={1.5} aria-hidden />
+                <span>{t.location.villa.time}</span>
+              </div>
+              <Image
+                src="/assets/location-villa-mosavali.png"
+                alt={t.location.villa.imageAlt}
+                width={1024}
+                height={576}
+                sizes="(max-width: 896px) 100vw, 896px"
+                className="w-full max-w-4xl mx-auto h-auto rounded-2xl object-cover shadow-md border border-stone-200/80 mb-4"
+              />
+              <div className="relative w-full max-w-4xl mx-auto">
+                <a
+                  href={appleMapsUrl(41.9382057, 44.6996392, t.location.villa.venue)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="absolute top-3 left-3 z-[1000] inline-flex items-center gap-2 rounded-lg bg-white/95 px-3 py-2 text-xs font-serif tracking-wide text-stone-800 shadow-md backdrop-blur-sm border border-stone-200/90 hover:bg-white transition-colors"
+                >
+                  <ExternalLink size={14} aria-hidden />
+                  {t.location.btn}
+                </a>
+                <VenueMap
+                  mapContainerProps={{ id: "venue-map-villa" }}
+                  position={[41.9382057, 44.6996392]}
+                  zoom={15}
+                  markerTitle={t.location.villa.venue}
+                  markerSubtitle={t.location.villa.vicinity}
+                />
+              </div>
+            </article>
+          </div>
+        </section>
+
+        {/* RSVP */}
+        <section
+          className="relative overflow-hidden py-24 px-4 w-full border-t border-stone-200"
+          style={{ backgroundColor: "#F5F2EA" }}
+        >
+          <MaskedGrapes className="absolute -right-[4%] bottom-16 w-[min(28vw,200px)] h-[min(22vw,160px)] opacity-[0.08] rotate-[6deg] pointer-events-none hidden md:block" />
+          <div className="max-w-3xl mx-auto flex flex-col items-center text-center relative z-10">
+            <h2
+              className="font-serif italic text-4xl sm:text-5xl mb-2"
+              style={{ color: "#3D4839" }}
+            >
+              {t.rsvp.title}
+            </h2>
+            <p className="font-serif text-sm text-stone-500 mb-10 tracking-wide max-w-md">
+              {t.rsvp.subtitle}
+            </p>
+            <RsvpForm lang={lang} />
+          </div>
         </section>
 
       </div>
