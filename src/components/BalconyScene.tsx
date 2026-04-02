@@ -224,6 +224,7 @@ function BalconyOrbitControls({
     <OrbitControls
       ref={controlsRef}
       enabled={pointerEventsEnabled}
+      enableRotate={false}
       enableZoom={false}
       enablePan={false}
       minPolarAngle={Math.PI / 2.5}
