@@ -93,6 +93,39 @@ export function BalconyModel({ isOpen, ...props }: any) {
 
 useGLTF.preload("/balcony.glb");
 
+const BALCONY_LIFT_Y_LANDSCAPE = 0.26;
+const BALCONY_LIFT_Y_PORTRAIT_EXTRA = 0.24;
+
+/** 0 = top of viewport, 1 = bottom. ~1/3 places the focal point in the upper third. */
+const BALCONY_VERTICAL_ANCHOR_FROM_TOP = 1 / 3;
+
+/** World-space Y offset so the balcony sits higher in the frame; portrait gets extra lift. */
+function balconyLiftY(aspect: number) {
+  return aspect < 1
+    ? BALCONY_LIFT_Y_LANDSCAPE + BALCONY_LIFT_Y_PORTRAIT_EXTRA
+    : BALCONY_LIFT_Y_LANDSCAPE;
+}
+
+function closedCameraZ(aspect: number) {
+  return aspect < 1 ? 3.85 : 2.75;
+}
+
+function cameraFovDeg(aspect: number) {
+  return aspect < 1 ? 50 : 38;
+}
+
+/**
+ * Orbit target offset from model center (world Y) so the balcony lines up with BALCONY_VERTICAL_ANCHOR_FROM_TOP.
+ * Negative = target below model center → balcony reads higher in the frame.
+ */
+function composeShiftY(aspect: number) {
+  const z = closedCameraZ(aspect);
+  const fovRad = THREE.MathUtils.degToRad(cameraFovDeg(aspect));
+  const halfViewportWorld = Math.tan(fovRad / 2) * z;
+  // Screen center = 0.5 from top; shift subject by (anchor - 0.5) in viewport fractions → world offset at depth z
+  return (BALCONY_VERTICAL_ANCHOR_FROM_TOP - 0.5) * 2 * halfViewportWorld;
+}
+
 /** Portrait viewports have a much narrower horizontal FOV at the same vertical FOV — widen FOV and pull back so the balcony isn’t clipped on phones. */
 function ResponsiveFrustum() {
   const { camera, viewport } = useThree();
@@ -113,14 +146,16 @@ function CameraRig({ isOpen, controlsRef }: { isOpen: boolean, controlsRef: Reac
 
   useEffect(() => {
     const aspect = viewport.width / viewport.height;
-    // Portrait: camera farther back so the full width of the model fits
-    const closedZ = aspect < 1 ? 3.85 : 2.75;
+    const liftY = balconyLiftY(aspect);
+    const shift = composeShiftY(aspect);
+    const targetY = liftY + shift;
+    const closedZ = closedCameraZ(aspect);
 
     if (!isOpen) {
       if (controlsRef.current) {
         gsap.to(camera.position, {
           x: 0,
-          y: 0,
+          y: liftY,
           z: closedZ,
           duration: 1.5,
           ease: "power2.out",
@@ -128,7 +163,7 @@ function CameraRig({ isOpen, controlsRef }: { isOpen: boolean, controlsRef: Reac
 
         gsap.to(controlsRef.current.target, {
           x: 0,
-          y: 0,
+          y: targetY,
           z: 0,
           duration: 1.5,
           ease: "power2.out",
@@ -136,10 +171,10 @@ function CameraRig({ isOpen, controlsRef }: { isOpen: boolean, controlsRef: Reac
       }
     } else {
       if (controlsRef.current) {
-        // Animate camera position inside the balcony
+        // Animate camera position inside the balcony (same vertical offset as exterior)
         gsap.to(camera.position, {
           x: 0,
-          y: 0.0,
+          y: liftY,
           z: -1.5,
           duration: 5,
           ease: "power2.inOut",
@@ -148,7 +183,7 @@ function CameraRig({ isOpen, controlsRef }: { isOpen: boolean, controlsRef: Reac
         // Animate OrbitControls target so it smoothly looks ahead into the room
         gsap.to(controlsRef.current.target, {
           x: 0,
-          y: 0.0,
+          y: targetY,
           z: -4,
           duration: 5,
           ease: "power2.inOut",
@@ -164,11 +199,39 @@ function ScaledBalconyModel({ isOpen }: { isOpen: boolean }) {
   const { viewport } = useThree();
   const aspect = viewport.width / viewport.height;
   const scale = aspect < 1 ? 1.0 : 1.2;
+  const liftY = balconyLiftY(aspect);
 
   return (
-    <Center position={[0, 0, 0]}>
+    <Center position={[0, liftY, 0]}>
       <BalconyModel scale={scale} isOpen={isOpen} />
     </Center>
+  );
+}
+
+function BalconyOrbitControls({
+  controlsRef,
+  pointerEventsEnabled,
+}: {
+  controlsRef: React.RefObject<OrbitControlsImpl | null>;
+  pointerEventsEnabled: boolean;
+}) {
+  const { viewport } = useThree();
+  const aspect = viewport.width / viewport.height;
+  const liftY = balconyLiftY(aspect);
+  const targetY = liftY + composeShiftY(aspect);
+
+  return (
+    <OrbitControls
+      ref={controlsRef}
+      enabled={pointerEventsEnabled}
+      enableZoom={false}
+      enablePan={false}
+      minPolarAngle={Math.PI / 2.5}
+      maxPolarAngle={Math.PI / 1.8}
+      minAzimuthAngle={-Math.PI / 8}
+      maxAzimuthAngle={Math.PI / 8}
+      target={[0, targetY, 0]}
+    />
   );
 }
 
@@ -180,22 +243,22 @@ export function BalconyScene({
   /** When false, touches pass through to the page (needed after hero fade on mobile). */
   pointerEventsEnabled?: boolean;
 }) {
-  const controlsRef = useRef<OrbitControlsImpl>(null);
+  const controlsRef = useRef<OrbitControlsImpl | null>(null);
 
   return (
     <div
       className={`absolute inset-0 z-0 min-h-0 min-w-0 w-full h-full bg-[#1a1818] ${pointerEventsEnabled ? "pointer-events-auto" : "pointer-events-none"}`}
       style={{
-        backgroundImage: "radial-gradient(circle at center, rgba(0,0,0,0.1) 20%, rgba(0,0,0,0.85) 100%), url('/brown brick.jpeg')",
-        backgroundSize: "100% 100%, 400px", // Gradient covers full element, brick repeats
-        backgroundRepeat: "no-repeat, repeat",
+        backgroundImage: "radial-gradient(circle at center, rgba(0,0,0,0.1) 20%, rgba(0,0,0,0.85) 100%), url('/mtkvari.jpg')",
+        backgroundSize: "100% 100%, cover",
+        backgroundRepeat: "no-repeat, no-repeat",
         backgroundPosition: "center, center"
       }}
     >
       <Canvas
         shadows
         className="!block h-full w-full"
-        camera={{ position: [0, 0, 1.8], fov: 35 }}
+        camera={{ position: [0, BALCONY_LIFT_Y_LANDSCAPE, 1.8], fov: 35 }}
         gl={{ alpha: true }}
         style={{
           pointerEvents: pointerEventsEnabled ? "auto" : "none",
@@ -212,20 +275,9 @@ export function BalconyScene({
 
         <ScaledBalconyModel isOpen={isOpen} />
 
-        <CameraRig isOpen={isOpen} controlsRef={controlsRef} />
+        <BalconyOrbitControls controlsRef={controlsRef} pointerEventsEnabled={pointerEventsEnabled} />
 
-        <OrbitControls
-          ref={controlsRef}
-          enabled={pointerEventsEnabled}
-          enableZoom={false}
-          enablePan={false}
-          minPolarAngle={Math.PI / 2.5}
-          maxPolarAngle={Math.PI / 1.8}
-          minAzimuthAngle={-Math.PI / 8}
-          maxAzimuthAngle={Math.PI / 8}
-          // Default target to look at the balcony
-          target={[0, 0, 0]}
-        />
+        <CameraRig isOpen={isOpen} controlsRef={controlsRef} />
       </Canvas>
     </div>
   );
