@@ -93,13 +93,28 @@ export function BalconyModel({ isOpen, ...props }: any) {
 
 useGLTF.preload("/balcony.glb");
 
+/** Portrait viewports have a much narrower horizontal FOV at the same vertical FOV — widen FOV and pull back so the balcony isn’t clipped on phones. */
+function ResponsiveFrustum() {
+  const { camera, viewport } = useThree();
+
+  useEffect(() => {
+    if (!(camera instanceof THREE.PerspectiveCamera)) return;
+    const aspect = viewport.width / viewport.height;
+    // Wider vertical FOV on narrow screens → more horizontal coverage (R3F keeps aspect in sync with the canvas)
+    camera.fov = aspect < 1 ? 50 : 38;
+    camera.updateProjectionMatrix();
+  }, [camera, viewport.width, viewport.height]);
+
+  return null;
+}
+
 function CameraRig({ isOpen, controlsRef }: { isOpen: boolean, controlsRef: React.RefObject<OrbitControlsImpl | null> }) {
   const { viewport, camera } = useThree();
 
   useEffect(() => {
     const aspect = viewport.width / viewport.height;
-    // To make the model fill the whole viewport space, bring the camera much closer
-    const closedZ = aspect < 1 ? 3.0 : 2.4;
+    // Portrait: camera farther back so the full width of the model fits
+    const closedZ = aspect < 1 ? 3.85 : 2.75;
 
     if (!isOpen) {
       if (controlsRef.current) {
@@ -145,6 +160,18 @@ function CameraRig({ isOpen, controlsRef }: { isOpen: boolean, controlsRef: Reac
   return null;
 }
 
+function ScaledBalconyModel({ isOpen }: { isOpen: boolean }) {
+  const { viewport } = useThree();
+  const aspect = viewport.width / viewport.height;
+  const scale = aspect < 1 ? 1.0 : 1.2;
+
+  return (
+    <Center position={[0, 0, 0]}>
+      <BalconyModel scale={scale} isOpen={isOpen} />
+    </Center>
+  );
+}
+
 export function BalconyScene({
   isOpen,
   pointerEventsEnabled = true,
@@ -157,7 +184,7 @@ export function BalconyScene({
 
   return (
     <div
-      className={`absolute inset-0 z-0 bg-[#1a1818] ${pointerEventsEnabled ? "pointer-events-auto" : "pointer-events-none"}`}
+      className={`absolute inset-0 z-0 min-h-0 min-w-0 w-full h-full bg-[#1a1818] ${pointerEventsEnabled ? "pointer-events-auto" : "pointer-events-none"}`}
       style={{
         backgroundImage: "radial-gradient(circle at center, rgba(0,0,0,0.1) 20%, rgba(0,0,0,0.85) 100%), url('/brown brick.jpeg')",
         backgroundSize: "100% 100%, 400px", // Gradient covers full element, brick repeats
@@ -167,21 +194,23 @@ export function BalconyScene({
     >
       <Canvas
         shadows
+        className="!block h-full w-full"
         camera={{ position: [0, 0, 1.8], fov: 35 }}
         gl={{ alpha: true }}
         style={{
           pointerEvents: pointerEventsEnabled ? "auto" : "none",
           touchAction: pointerEventsEnabled ? "none" : "auto",
+          width: "100%",
+          height: "100%",
+          display: "block",
         }}
       >
+        <ResponsiveFrustum />
         <ambientLight intensity={1.2} />
         <directionalLight position={[5, 10, 5]} intensity={1.5} castShadow />
         <Environment preset="city" />
 
-        {/* Adjusted scale and position to fit entirely in the viewport */}
-        <Center position={[0, 0, 0]}>
-          <BalconyModel scale={1.2} isOpen={isOpen} />
-        </Center>
+        <ScaledBalconyModel isOpen={isOpen} />
 
         <CameraRig isOpen={isOpen} controlsRef={controlsRef} />
 
