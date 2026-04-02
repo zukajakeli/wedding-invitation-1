@@ -57,6 +57,15 @@ export function BalconyModel({ isOpen, ...props }: any) {
         receiveShadow
       />
 
+      {/* Sky / backdrop mesh from GLB (Blender object name: Plane) */}
+      {nodes.Plane && (
+        <primitive
+          object={nodes.Plane}
+          castShadow={false}
+          receiveShadow={false}
+        />
+      )}
+
       {/* The left door */}
       <group ref={doorLeftGroupRef} position={[leftPivotX, 0, leftPivotZ]}>
         <mesh
